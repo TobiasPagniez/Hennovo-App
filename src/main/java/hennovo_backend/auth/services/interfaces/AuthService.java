@@ -5,6 +5,6 @@ import hennovo_backend.auth.dtos.response.AuthResponse;
 
 public interface AuthService {
 
-    AuthResponse login(LoginRequest request);
+    AuthResponse authenticate(LoginRequest request);
 
 }

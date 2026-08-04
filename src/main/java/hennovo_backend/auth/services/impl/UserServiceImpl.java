@@ -14,6 +14,8 @@ import hennovo_backend.auth.mapper.UserMapper;
 import hennovo_backend.auth.repositorys.RolRepository;
 import hennovo_backend.auth.repositorys.UsuarioRepository;
 import hennovo_backend.auth.services.interfaces.UserService;
+import hennovo_backend.shared.exception.ConflictException;
+import hennovo_backend.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -29,25 +31,26 @@ public class UserServiceImpl implements UserService {
     public UserResponse createUser(CreateUserRequest request) {
 
         if (usuarioRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("El email ya se encuentra registrado.");
+            throw new ConflictException(
+                    "El email ya se encuentra registrado."
+            );
         }
 
         Rol rol = rolRepository.findByNombre(request.rol())
-                .orElseThrow(() -> new RuntimeException("Rol no encontrado."));
+                .orElseThrow(() ->
+                        new NotFoundException("Rol no encontrado.")
+                );
 
         Usuario usuario = userMapper.toEntity(request, rol);
 
-        usuario.setPassword(passwordEncoder.encode(request.password()));
+        usuario.setPassword(
+                passwordEncoder.encode(request.password())
+        );
 
-        Usuario usuarioGuardado = usuarioRepository.save(usuario);
+        Usuario usuarioGuardado =
+                usuarioRepository.save(usuario);
 
         return userMapper.toResponse(usuarioGuardado);
-    }
-    
-    private Usuario findUserById(Long id) {
-
-    return usuarioRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
     }
 
     @Override
@@ -68,13 +71,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse updateUser(Long id, UpdateUserRequest request) {
+    public UserResponse updateUser(
+            Long id,
+            UpdateUserRequest request) {
 
         Usuario usuario = findUserById(id);
 
         userMapper.updateEntity(usuario, request);
 
-        Usuario usuarioActualizado = usuarioRepository.save(usuario);
+        Usuario usuarioActualizado =
+                usuarioRepository.save(usuario);
 
         return userMapper.toResponse(usuarioActualizado);
     }
@@ -83,14 +89,25 @@ public class UserServiceImpl implements UserService {
     public void deactivateUser(Long id) {
 
         Usuario usuario = findUserById(id);
-        
+
         if (!usuario.getActivo()) {
-            throw new RuntimeException("El usuario ya se encuentra desactivado.");
-        }        
+            throw new ConflictException(
+                    "El usuario ya se encuentra desactivado."
+            );
+        }
 
         usuario.setActivo(false);
 
         usuarioRepository.save(usuario);
     }
 
+    private Usuario findUserById(Long id) {
+
+        return usuarioRepository.findById(id)
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Usuario no encontrado."
+                        )
+                );
+    }
 }

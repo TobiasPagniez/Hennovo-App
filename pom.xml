@@ -112,7 +112,12 @@
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.12.7</version>
 			<scope>runtime</scope>
-		</dependency>		
+		</dependency>
+		<dependency>
+			<groupId>io.github.cdimascio</groupId>
+			<artifactId>dotenv-java</artifactId>
+			<version>3.2.0</version>
+		</dependency>				
 	</dependencies>
 
 	<build>
