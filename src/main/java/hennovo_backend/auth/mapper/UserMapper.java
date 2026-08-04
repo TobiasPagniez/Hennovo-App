@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import hennovo_backend.auth.dtos.request.CreateUserRequest;
 import hennovo_backend.auth.dtos.request.UpdateUserRequest;
+import hennovo_backend.auth.dtos.response.AuthResponse;
 import hennovo_backend.auth.dtos.response.UserResponse;
 import hennovo_backend.auth.entitys.Rol;
 import hennovo_backend.auth.entitys.Usuario;
@@ -36,11 +37,26 @@ public class UserMapper {
         );
     }
 
-    public void updateEntity(Usuario usuario, UpdateUserRequest request) {
+    public AuthResponse toAuthResponse(
+            Usuario usuario,
+            String token) {
 
-    usuario.setNombre(request.nombre());
-    usuario.setApellido(request.apellido());
-
+        return new AuthResponse(
+                token,
+                "Bearer",
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getApellido(),
+                usuario.getEmail(),
+                usuario.getRol().getNombre()
+        );
     }
 
+    public void updateEntity(
+            Usuario usuario,
+            UpdateUserRequest request) {
+
+        usuario.setNombre(request.nombre());
+        usuario.setApellido(request.apellido());
+    }
 }
