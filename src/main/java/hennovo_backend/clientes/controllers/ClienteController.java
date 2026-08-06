@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import hennovo_backend.clientes.dtos.request.ClienteRequestDTO;
@@ -37,6 +38,16 @@ public class ClienteController {
                 .body(cliente);
     }
 
+    @GetMapping("/buscar")
+    public ResponseEntity<List<ClienteResponseDTO>> buscarPorNombre(
+            @RequestParam String nombre) {
+
+        List<ClienteResponseDTO> clientes =
+                clienteService.buscarPorNombre(nombre);
+
+        return ResponseEntity.ok(clientes);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ClienteResponseDTO> obtenerPorId(
             @PathVariable Long id) {
@@ -52,7 +63,7 @@ public class ClienteController {
         List<ClienteResponseDTO> clientes = clienteService.obtenerTodos();
 
         return ResponseEntity.ok(clientes);
-    }
+    }    
 
     @PutMapping("/{id}")
     public ResponseEntity<ClienteResponseDTO> modificar(
