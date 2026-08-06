@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import hennovo_backend.auth.dtos.request.CreateUserRequest;
 import hennovo_backend.auth.dtos.request.UpdateUserRequest;
 import hennovo_backend.auth.dtos.response.UserResponse;
@@ -28,7 +30,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(
-            @RequestBody CreateUserRequest request) {
+            @Valid @RequestBody CreateUserRequest request) {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -55,7 +57,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
-            @RequestBody UpdateUserRequest request) {
+            @Valid @RequestBody UpdateUserRequest request) {
 
         return ResponseEntity.ok(
                 userService.updateUser(id, request)

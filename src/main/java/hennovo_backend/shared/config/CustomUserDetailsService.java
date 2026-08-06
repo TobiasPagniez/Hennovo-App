@@ -1,8 +1,6 @@
 package hennovo_backend.shared.config;
 
-import java.util.List;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,6 +9,7 @@ import org.springframework.security.core.userdetails.User;
 
 import hennovo_backend.auth.entitys.Usuario;
 import hennovo_backend.auth.repositorys.UsuarioRepository;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -20,21 +19,23 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UsuarioRepository usuarioRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String email) {
+@Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String email)
+            throws UsernameNotFoundException {
 
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        Usuario usuario = usuarioRepository
+                .findByEmail(email)
                 .orElseThrow(() ->
-                        new UsernameNotFoundException("Usuario no encontrado."));
+                        new UsernameNotFoundException(
+                                "Usuario no encontrado"
+                        )
+                );
 
         return User.builder()
                 .username(usuario.getEmail())
                 .password(usuario.getPassword())
                 .authorities(
-                        List.of(
-                                new SimpleGrantedAuthority(
-                                        "ROLE_" + usuario.getRol().getNombre().name()
-                                )
-                        )
+                        "ROLE_" + usuario.getRol().getNombre().name()
                 )
                 .disabled(!usuario.getActivo())
                 .build();

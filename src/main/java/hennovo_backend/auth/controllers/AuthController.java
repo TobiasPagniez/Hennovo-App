@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import hennovo_backend.auth.dtos.request.LoginRequest;
 import hennovo_backend.auth.dtos.response.AuthResponse;
 import hennovo_backend.auth.services.interfaces.AuthService;
@@ -20,7 +22,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
-            @RequestBody LoginRequest request) {
+            @Valid @RequestBody LoginRequest request) {
 
         return ResponseEntity.ok(
                 authService.authenticate(request)

@@ -11,4 +11,7 @@ public interface RolRepository extends JpaRepository<Rol, Long> {
 
     Optional<Rol> findByNombre(NombreRol nombre);
 
+    // para crear admin
+    boolean existsByNombre(NombreRol nombre);
+
 }
