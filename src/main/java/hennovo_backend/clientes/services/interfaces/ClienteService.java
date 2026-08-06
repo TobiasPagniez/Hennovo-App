@@ -16,4 +16,6 @@ public interface ClienteService {
     ClienteResponseDTO modificar(Long id, ClienteRequestDTO dto);
 
     void desactivar(Long id);
+
+    List<ClienteResponseDTO> buscarPorNombre(String nombre);
 }

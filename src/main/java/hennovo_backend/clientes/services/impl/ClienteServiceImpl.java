@@ -96,4 +96,14 @@ public class ClienteServiceImpl implements ClienteService {
 
         clienteRepository.save(cliente);
     }
+
+    @Override
+    public List<ClienteResponseDTO> buscarPorNombre(String nombre) {
+
+        return clienteRepository.findByNombreContainingIgnoreCase(nombre)
+                .stream()
+                .map(clienteMapper::toResponseDTO)
+                .toList();
+    }
+
 }
