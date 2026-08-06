@@ -11,7 +11,7 @@ import java.util.List;
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByActivoTrue();
 
-    boolean existsByTipoHuevoAndTamanoAndPresentacion(
+    boolean existsByTipoHuevoAndTamañoAndPresentacion(
             TipoHuevo tipoHuevo,
             Tamaño tamaño,
             Presentacion presentacion

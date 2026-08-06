@@ -20,7 +20,7 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     public ProductoResponse crear(ProductoRequest request) {
 
-        if (productoRepository.existsByTipoHuevoAndTamanoAndPresentacion(
+        if (productoRepository.existsByTipoHuevoAndTamañoAndPresentacion(
                 request.getTipoHuevo(),
                 request.getTamaño(),
                 request.getPresentacion())) {
@@ -43,7 +43,7 @@ public class ProductoServiceImpl implements ProductoService {
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-        if (productoRepository.existsByTipoHuevoAndTamanoAndPresentacion(
+        if (productoRepository.existsByTipoHuevoAndTamañoAndPresentacion(
                 request.getTipoHuevo(),
                 request.getTamaño(),
                 request.getPresentacion())

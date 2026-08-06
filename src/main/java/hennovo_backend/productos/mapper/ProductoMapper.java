@@ -13,7 +13,7 @@ public class ProductoMapper {
         Producto producto = new Producto();
 
         producto.setTipoHuevo(request.getTipoHuevo());
-        producto.setTamano(request.getTamano());
+        producto.setTamaño(request.getTamaño());
         producto.setPresentacion(request.getPresentacion());
 
         return producto;
@@ -25,7 +25,7 @@ public class ProductoMapper {
 
         response.setId(producto.getId());
         response.setTipoHuevo(producto.getTipoHuevo());
-        response.setTamano(producto.getTamano());
+        response.setTamaño(producto.getTamaño());
         response.setPresentacion(producto.getPresentacion());
         response.setActivo(producto.getActivo());
 
