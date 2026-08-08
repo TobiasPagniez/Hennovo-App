@@ -3,6 +3,8 @@ package hennovo_backend.productos.services;
 import hennovo_backend.productos.dtos.ProductoRequest;
 import hennovo_backend.productos.dtos.ProductoResponse;
 import hennovo_backend.productos.entity.Producto;
+import hennovo_backend.productos.exceptions.ProductoDuplicadoException;
+import hennovo_backend.productos.exceptions.ProductoNoEncontradoException;
 import hennovo_backend.productos.mapper.ProductoMapper;
 import hennovo_backend.productos.repository.ProductoRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,7 @@ public class ProductoServiceImpl implements ProductoService {
                 request.getTamaño(),
                 request.getPresentacion())) {
 
-            throw new RuntimeException("El producto ya existe.");
+            throw new ProductoDuplicadoException();
         }
 
         Producto producto = productoMapper.toEntity(request);
@@ -41,7 +43,7 @@ public class ProductoServiceImpl implements ProductoService {
     public ProductoResponse actualizar(Long id, ProductoRequest request) {
 
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new ProductoNoEncontradoException(id));
 
         if (productoRepository.existsByTipoHuevoAndTamañoAndPresentacion(
                 request.getTipoHuevo(),
@@ -52,7 +54,7 @@ public class ProductoServiceImpl implements ProductoService {
                         || !producto.getTamaño().equals(request.getTamaño())
                         || !producto.getPresentacion().equals(request.getPresentacion()))) {
 
-            throw new RuntimeException("Ya existe un producto con esos datos.");
+            throw new ProductoDuplicadoException();
         }
 
         producto.setTipoHuevo(request.getTipoHuevo());
@@ -68,7 +70,7 @@ public class ProductoServiceImpl implements ProductoService {
     public void desactivar(Long id) {
 
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new ProductoNoEncontradoException(id));
 
         producto.setActivo(false);
 
@@ -79,7 +81,7 @@ public class ProductoServiceImpl implements ProductoService {
     public ProductoResponse obtenerPorId(Long id) {
 
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new ProductoNoEncontradoException(id));
 
         return productoMapper.toResponse(producto);
     }
