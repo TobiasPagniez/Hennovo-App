@@ -1,0 +1,6 @@
+package hennovo_backend.productos.enums;
+
+public enum Presentacion {
+    MAPLE,
+    CAJITA
+}
