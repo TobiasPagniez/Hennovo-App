@@ -20,6 +20,7 @@ public class DetallePedidoMapper {
 
         detalle.setProducto(producto);
         detalle.setCantidad(request.cantidad());
+        detalle.setUnidad(request.unidad());
 
         return detalle;
     }
@@ -27,12 +28,15 @@ public class DetallePedidoMapper {
     public DetallePedidoResponse toResponse(DetallePedido detalle) {
 
         BigDecimal subtotal = detalle.getPrecioUnitario()
-                .multiply(BigDecimal.valueOf(detalle.getCantidad()));
+                .multiply(
+                        BigDecimal.valueOf(detalle.getCantidad())
+                );
 
         return new DetallePedidoResponse(
                 detalle.getId(),
                 detalle.getProducto().getId(),
                 detalle.getCantidad(),
+                detalle.getUnidad(),
                 detalle.getPrecioUnitario(),
                 subtotal
         );

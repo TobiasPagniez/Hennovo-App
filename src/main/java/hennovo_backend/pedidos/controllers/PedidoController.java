@@ -24,58 +24,48 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PedidoController {
 
-    private final PedidoService pedidoService;
+        private final PedidoService pedidoService;
 
-    @PostMapping
-    public ResponseEntity<PedidoResponse> crear(
-            @Valid @RequestBody PedidoRequest request
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(pedidoService.crear(request));
-    }
+        @PostMapping
+        public ResponseEntity<PedidoResponse> crear(
+                        @Valid @RequestBody PedidoRequest request) {
+                return ResponseEntity
+                                .status(HttpStatus.CREATED)
+                                .body(pedidoService.crear(request));
+        }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<PedidoResponse> obtenerPorId(
-            @PathVariable Long id
-    ) {
-        return ResponseEntity.ok(
-                pedidoService.obtenerPorId(id)
-        );
-    }
+        @GetMapping("/{id}")
+        public ResponseEntity<PedidoResponse> obtenerPorId(
+                        @PathVariable Long id) {
+                return ResponseEntity.ok(
+                                pedidoService.obtenerPorId(id));
+        }
 
-    @GetMapping
-    public ResponseEntity<List<PedidoResponse>> listar() {
-        return ResponseEntity.ok(
-                pedidoService.listar()
-        );
-    }
+        @GetMapping
+        public ResponseEntity<List<PedidoResponse>> listar() {
+                return ResponseEntity.ok(
+                                pedidoService.listar());
+        }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<PedidoResponse> actualizar(
-            @PathVariable Long id,
-            @Valid @RequestBody PedidoRequest request
-    ) {
-        return ResponseEntity.ok(
-                pedidoService.actualizar(id, request)
-        );
-    }
+        @PutMapping("/{id}")
+        public ResponseEntity<PedidoResponse> actualizar(
+                        @PathVariable Long id,
+                        @Valid @RequestBody PedidoRequest request) {
+                return ResponseEntity.ok(
+                                pedidoService.actualizar(id, request));
+        }
 
-    @PatchMapping("/{id}/entregado")
-    public ResponseEntity<Void> marcarComoEntregado(
-            @PathVariable Long id
-    ) {
-        pedidoService.marcarComoEntregado(id);
+        @PatchMapping("/{id}/entregado")
+        public ResponseEntity<Void> marcarComoEntregado(
+                        @PathVariable Long id) {
+                pedidoService.marcarComoEntregado(id);
+                return ResponseEntity.noContent().build();
+        }
 
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/{id}/pagado")
-    public ResponseEntity<Void> marcarComoPagado(
-            @PathVariable Long id
-    ) {
-        pedidoService.marcarComoPagado(id);
-
-        return ResponseEntity.noContent().build();
-    }
+        @PatchMapping("/{id}/pagado")
+        public ResponseEntity<Void> marcarComoPagado(
+                        @PathVariable Long id) {
+                pedidoService.marcarComoPagado(id);
+                return ResponseEntity.noContent().build();
+        }
 }
