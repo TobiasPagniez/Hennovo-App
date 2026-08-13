@@ -13,4 +13,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Pedido> findByRutaIdOrderByOrdenRutaAsc(Long rutaId);
 
     List<Pedido> findByFechaAndRutaIsNull(LocalDate fecha);
+
+    //para el modulo de pagos
+    List<Pedido> findByClienteIdOrderByFechaAscIdAsc(Long clienteId);
 }
