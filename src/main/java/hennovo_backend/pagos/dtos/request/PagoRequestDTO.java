@@ -1,0 +1,29 @@
+package hennovo_backend.pagos.dtos.request;
+
+import java.math.BigDecimal;
+
+import hennovo_backend.pagos.entitys.MedioPago;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+public record PagoRequestDTO(
+
+        @NotNull(message = "El cliente es obligatorio")
+        Long clienteId,
+
+        @NotNull(message = "El importe es obligatorio")
+        @DecimalMin(value = "0.01", message = "El importe debe ser mayor a 0")
+        BigDecimal importe,
+
+        @NotNull(message = "El medio de pago es obligatorio")
+        MedioPago medioPago,
+
+        @Size(max = 100, message = "El número de comprobante no puede superar los 100 caracteres")
+        String numeroComprobante,
+
+        @Size(max = 500, message = "Las observaciones no pueden superar los 500 caracteres")
+        String observaciones
+
+) {
+}
