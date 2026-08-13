@@ -14,6 +14,7 @@ import hennovo_backend.pagos.entitys.Pago;
 import hennovo_backend.pagos.mapper.PagoMapper;
 import hennovo_backend.pagos.repositorys.PagoRepository;
 import hennovo_backend.pagos.services.interfaces.PagoService;
+import hennovo_backend.shared.exception.BadRequestException;
 import jakarta.persistence.EntityNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,7 @@ public class PagoServiceImpl implements PagoService {
                         new EntityNotFoundException("Cliente no encontrado"));
 
         if (!cliente.getActivo()) {
-            throw new IllegalArgumentException(
+            throw new BadRequestException(
                     "No se puede registrar un pago para un cliente inactivo");
         }
 
@@ -95,7 +96,7 @@ public class PagoServiceImpl implements PagoService {
                         new EntityNotFoundException("Pago no encontrado"));
 
         if (pago.getAnulado()) {
-            throw new IllegalArgumentException(
+            throw new BadRequestException(
                     "El pago ya se encuentra anulado");
         }
 
