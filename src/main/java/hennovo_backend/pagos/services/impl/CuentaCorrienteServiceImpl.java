@@ -3,7 +3,9 @@ package hennovo_backend.pagos.services.impl;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +45,8 @@ public class CuentaCorrienteServiceImpl implements CuentaCorrienteService {
 
                 List<Pedido> pedidos = pedidoRepository.findByClienteIdOrderByFechaAscIdAsc(clienteId);
 
+                Map<Long, BigDecimal> totalesPorPedido = calcularTotalesPorPedido(clienteId);
+
                 List<Pago> pagos = pagoRepository.findByClienteIdAndAnuladoFalseOrderByFechaAsc(
                                 clienteId);
 
@@ -67,7 +71,7 @@ public class CuentaCorrienteServiceImpl implements CuentaCorrienteService {
 
                 for (Pedido pedido : pedidos) {
 
-                        BigDecimal totalPedido = calcularTotalPedido(pedido.getId());
+                        BigDecimal totalPedido = totalesPorPedido.getOrDefault(pedido.getId(), BigDecimal.ZERO);
 
                         totalPedidos = totalPedidos.add(totalPedido);
 
@@ -147,7 +151,7 @@ public class CuentaCorrienteServiceImpl implements CuentaCorrienteService {
                 // PEDIDOS
                 for (Pedido pedido : pedidos) {
 
-                        BigDecimal totalPedido = calcularTotalPedido(pedido.getId());
+                        BigDecimal totalPedido = totalesPorPedido.getOrDefault(pedido.getId(), BigDecimal.ZERO);
 
                         movimientos.add(
                                         new MovimientoCuentaCorrienteDTO(
@@ -221,17 +225,17 @@ public class CuentaCorrienteServiceImpl implements CuentaCorrienteService {
                                 movimientosConSaldo);
         }
 
-        private BigDecimal calcularTotalPedido(Long pedidoId) {
+        private Map<Long, BigDecimal> calcularTotalesPorPedido(Long clienteId) {
 
-                List<DetallePedido> detalles = detallePedidoRepository.findByPedidoId(pedidoId);
+                Map<Long, BigDecimal> totalesPorPedido = new HashMap<>();
 
-                return detalles.stream()
-                                .map(detalle -> detalle.getPrecioUnitario()
-                                                .multiply(
-                                                                BigDecimal.valueOf(
-                                                                                detalle.getCantidad())))
-                                .reduce(
-                                                BigDecimal.ZERO,
-                                                BigDecimal::add);
+                for (DetallePedido detalle : detallePedidoRepository.findByPedidoClienteId(clienteId)) {
+                        BigDecimal subtotal = detalle.getPrecioUnitario()
+                                        .multiply(BigDecimal.valueOf(detalle.getCantidad()));
+
+                        totalesPorPedido.merge(detalle.getPedido().getId(), subtotal, BigDecimal::add);
+                }
+
+                return totalesPorPedido;
         }
 }
