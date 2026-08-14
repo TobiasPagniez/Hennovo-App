@@ -15,7 +15,9 @@ public record CuentaCorrienteResponseDTO(
 
         BigDecimal saldo,
 
-        Boolean saldoAFavor,
+        BigDecimal saldoAFavor,
+
+        List<PedidoEstadoCuentaDTO> pedidos,
 
         List<MovimientoCuentaCorrienteDTO> movimientos
 
