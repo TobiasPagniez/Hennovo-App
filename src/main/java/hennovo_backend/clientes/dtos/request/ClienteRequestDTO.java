@@ -11,6 +11,9 @@ public record ClienteRequestDTO(
         @NotBlank(message = "La dirección es obligatoria")
         String direccion,
 
+        @NotBlank(message = "La localidad es obligatoria")
+        String localidad,
+
         @NotBlank(message = "El teléfono es obligatorio")
         String telefono,
 

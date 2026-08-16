@@ -8,6 +8,8 @@ public record ClienteResponseDTO(
 
         String direccion,
 
+        String localidad,
+
         String telefono,
 
         Boolean activo,

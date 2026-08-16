@@ -46,16 +46,8 @@ public class RemitoMapper {
         return detalle;
     }
 
-    public DetalleRemitoResponse toDetalleResponse(
-            DetalleRemito detalle) {
-
-        BigDecimal importe =
-                detalle.getPrecioUnitario()
-                        .multiply(
-                                BigDecimal.valueOf(
-                                        detalle.getCantidad()
-                                )
-                        );
+        public DetalleRemitoResponse toDetalleResponse(
+                DetalleRemito detalle) {
 
         return new DetalleRemitoResponse(
                 detalle.getId(),
@@ -63,9 +55,9 @@ public class RemitoMapper {
                 detalle.getCantidad(),
                 detalle.getUnidad(),
                 detalle.getPrecioUnitario(),
-                importe
+                detalle.getImporte()
         );
-    }
+        }
 
     public RemitoResponse toResponse(
             Remito remito,
@@ -82,7 +74,7 @@ public class RemitoMapper {
                 cliente.getId(),
                 cliente.getNombre(),
                 cliente.getDireccion(),
-                null,
+                cliente.getLocalidad(),
                 remito.getCorrespondeFacturacion(),
                 detalles,
                 total

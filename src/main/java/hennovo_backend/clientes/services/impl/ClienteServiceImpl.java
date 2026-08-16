@@ -76,6 +76,7 @@ public class ClienteServiceImpl implements ClienteService {
 
         cliente.setNombre(dto.nombre());
         cliente.setDireccion(dto.direccion());
+        cliente.setLocalidad(dto.localidad());
         cliente.setTelefono(dto.telefono());
         cliente.setCategoria(categoria);
 

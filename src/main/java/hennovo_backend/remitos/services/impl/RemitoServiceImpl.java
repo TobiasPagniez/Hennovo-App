@@ -35,187 +35,192 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class RemitoServiceImpl implements RemitoService {
 
-    private final RemitoRepository remitoRepository;
-    private final DetalleRemitoRepository detalleRemitoRepository;
+        private final RemitoRepository remitoRepository;
+        private final DetalleRemitoRepository detalleRemitoRepository;
 
-    private final PedidoRepository pedidoRepository;
-    private final ProductoRepository productoRepository;
-    private final PrecioProductoRepository precioProductoRepository;
-    private final ListaPrecioRepository listaPrecioRepository;
+        private final PedidoRepository pedidoRepository;
+        private final ProductoRepository productoRepository;
+        private final PrecioProductoRepository precioProductoRepository;
+        private final ListaPrecioRepository listaPrecioRepository;
 
-    private final RemitoMapper remitoMapper;
+        private final RemitoMapper remitoMapper;
 
-    private static final int MAPLES_POR_CAJON = 12;
+        private static final int MAPLES_POR_CAJON = 12;
 
-    @Override
-    public RemitoResponse crear(RemitoRequest request) {
+        @Override
+        public RemitoResponse crear(RemitoRequest request) {
 
-        // Buscar pedido
-        Pedido pedido = pedidoRepository.findById(request.pedidoId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Pedido no encontrado"));
+                // Buscar pedido
+                Pedido pedido = pedidoRepository.findById(request.pedidoId())
+                                .orElseThrow(() -> new EntityNotFoundException(
+                                                "Pedido no encontrado"));
 
-        // Un pedido no puede tener más de un remito
-        if (remitoRepository.findByPedidoId(pedido.getId()).isPresent()) {
-            throw new IllegalStateException(
-                    "El pedido ya tiene un remito");
-        }
-         
-        // El pedido debe estar entregado               /*revisar este condicional*/
-        //if (!pedido.getEntregado()) {           
-        //    throw new IllegalStateException(
-        //            "No se puede generar un remito para un pedido que no fue entregado");
-        //}
-        
+                // Un pedido no puede tener más de un remito
+                if (remitoRepository.findByPedidoId(pedido.getId()).isPresent()) {
+                        throw new IllegalStateException(
+                                        "El pedido ya tiene un remito");
+                }
 
-        // Obtener lista de precios vigente
-        ListaPrecio listaVigente = listaPrecioRepository.findByFechaHastaIsNull()
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "No existe una lista de precios vigente"));
+                // El pedido debe estar entregado /*revisar este condicional*/
+                // if (!pedido.getEntregado()) {
+                // throw new IllegalStateException(
+                // "No se puede generar un remito para un pedido que no fue entregado");
+                // }
 
-        // Crear remito
-        Remito remito = remitoMapper.toEntity(
-                request,
-                pedido);
+                // Obtener lista de precios vigente
+                ListaPrecio listaVigente = listaPrecioRepository.findByFechaHastaIsNull()
+                                .orElseThrow(() -> new EntityNotFoundException(
+                                                "No existe una lista de precios vigente"));
 
-        remito = remitoRepository.save(remito);
+                // Crear remito
+                Remito remito = remitoMapper.toEntity(
+                                request,
+                                pedido);
 
-        // Crear detalles
-        crearDetalles(
-                remito,
-                request.detalles(),
-                pedido.getCliente(),
-                listaVigente);
+                remito = remitoRepository.save(remito);
 
-        return construirResponse(remito);
-    }
+                // Crear detalles
+                crearDetalles(
+                                remito,
+                                request.detalles(),
+                                pedido.getCliente(),
+                                listaVigente);
 
-    @Override
-    @Transactional(readOnly = true)
-    public RemitoResponse obtenerPorId(Long id) {
-
-        Remito remito = remitoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Remito no encontrado"));
-
-        return construirResponse(remito);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<RemitoResponse> listar() {
-
-        return remitoRepository.findAll()
-                .stream()
-                .map(this::construirResponse)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public RemitoResponse obtenerPorPedido(Long pedidoId) {
-
-        Remito remito = remitoRepository.findByPedidoId(pedidoId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "El pedido no tiene un remito"));
-
-        return construirResponse(remito);
-    }
-
-    private void crearDetalles(
-            Remito remito,
-            List<DetalleRemitoRequest> detallesRequest,
-            Cliente cliente,
-            ListaPrecio listaVigente) {
-
-        for (DetalleRemitoRequest detalleRequest : detallesRequest) {
-
-            Producto producto = productoRepository
-                    .findById(detalleRequest.productoId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Producto no encontrado: "
-                                    + detalleRequest.productoId()));
-
-            PrecioProducto precioProducto = precioProductoRepository
-                    .findByProductoIdAndCategoriaIdAndListaId(
-                            producto.getId(),
-                            cliente.getCategoria().getId(),
-                            listaVigente.getId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "No existe un precio para el producto "
-                                    + producto.getId()
-                                    + " en la categoría "
-                                    + cliente.getCategoria().getId()
-                                    + " dentro de la lista vigente"));
-
-            BigDecimal precioUnitario = obtenerPrecioUnitario(
-                    precioProducto,
-                    detalleRequest.unidad());
-
-            DetalleRemito detalle = remitoMapper.toDetalleEntity(
-                    detalleRequest,
-                    producto);
-
-            detalle.setRemito(remito);
-            detalle.setPrecioUnitario(precioUnitario);
-
-            detalleRemitoRepository.save(detalle);
-        }
-    }
-
-    private BigDecimal obtenerPrecioUnitario(
-            PrecioProducto precioProducto,
-            UnidadPrecio unidadSolicitada) {
-
-        UnidadPrecio unidadPrecio = precioProducto.getUnidadPrecio();
-
-        if (unidadSolicitada == unidadPrecio) {
-            return precioProducto.getPrecio();
+                return construirResponse(remito);
         }
 
-        if (unidadPrecio == UnidadPrecio.CAJON
-                && unidadSolicitada == UnidadPrecio.MAPLE) {
+        @Override
+        @Transactional(readOnly = true)
+        public RemitoResponse obtenerPorId(Long id) {
 
-            return precioProducto.getPrecio()
-                    .divide(
-                            BigDecimal.valueOf(MAPLES_POR_CAJON),
-                            2,
-                            RoundingMode.HALF_UP);
+                Remito remito = remitoRepository.findById(id)
+                                .orElseThrow(() -> new EntityNotFoundException(
+                                                "Remito no encontrado"));
+
+                return construirResponse(remito);
         }
 
-        if (unidadPrecio == UnidadPrecio.MAPLE
-                && unidadSolicitada == UnidadPrecio.CAJON) {
+        @Override
+        @Transactional(readOnly = true)
+        public List<RemitoResponse> listar() {
 
-            return precioProducto.getPrecio()
-                    .multiply(
-                            BigDecimal.valueOf(MAPLES_POR_CAJON));
+                return remitoRepository.findAll()
+                                .stream()
+                                .map(this::construirResponse)
+                                .toList();
         }
 
-        throw new IllegalArgumentException(
-                "No existe una conversión entre "
-                        + unidadPrecio
-                        + " y "
-                        + unidadSolicitada);
-    }
+        @Override
+        @Transactional(readOnly = true)
+        public RemitoResponse obtenerPorPedido(Long pedidoId) {
 
-    private RemitoResponse construirResponse(Remito remito) {
+                Remito remito = remitoRepository.findByPedidoId(pedidoId)
+                                .orElseThrow(() -> new EntityNotFoundException(
+                                                "El pedido no tiene un remito"));
 
-        List<DetalleRemito> detalles = detalleRemitoRepository.findByRemitoId(
-                remito.getId());
+                return construirResponse(remito);
+        }
 
-        List<DetalleRemitoResponse> detalleResponses = detalles.stream()
-                .map(remitoMapper::toDetalleResponse)
-                .toList();
+        private void crearDetalles(
+                        Remito remito,
+                        List<DetalleRemitoRequest> detallesRequest,
+                        Cliente cliente,
+                        ListaPrecio listaVigente) {
 
-        BigDecimal total = detalleResponses.stream()
-                .map(DetalleRemitoResponse::importe)
-                .reduce(
-                        BigDecimal.ZERO,
-                        BigDecimal::add);
+                for (DetalleRemitoRequest detalleRequest : detallesRequest) {
 
-        return remitoMapper.toResponse(
-                remito,
-                detalleResponses,
-                total);
-    }
+                        Producto producto = productoRepository
+                                        .findById(detalleRequest.productoId())
+                                        .orElseThrow(() -> new EntityNotFoundException(
+                                                        "Producto no encontrado: "
+                                                                        + detalleRequest.productoId()));
+
+                        PrecioProducto precioProducto = precioProductoRepository
+                                        .findByProductoIdAndCategoriaIdAndListaId(
+                                                        producto.getId(),
+                                                        cliente.getCategoria().getId(),
+                                                        listaVigente.getId())
+                                        .orElseThrow(() -> new EntityNotFoundException(
+                                                        "No existe un precio para el producto "
+                                                                        + producto.getId()
+                                                                        + " en la categoría "
+                                                                        + cliente.getCategoria().getId()
+                                                                        + " dentro de la lista vigente"));
+
+                        BigDecimal precioUnitario = obtenerPrecioUnitario(
+                                        precioProducto,
+                                        detalleRequest.unidad());
+
+                        DetalleRemito detalle = remitoMapper.toDetalleEntity(
+                                        detalleRequest,
+                                        producto);
+
+                        detalle.setRemito(remito);
+                        detalle.setPrecioUnitario(precioUnitario);
+
+                        BigDecimal importe = precioUnitario.multiply(
+                                        BigDecimal.valueOf(
+                                                        detalleRequest.cantidad()));
+
+                        detalle.setImporte(importe);
+
+                        detalleRemitoRepository.save(detalle);
+                }
+        }
+
+        private BigDecimal obtenerPrecioUnitario(
+                        PrecioProducto precioProducto,
+                        UnidadPrecio unidadSolicitada) {
+
+                UnidadPrecio unidadPrecio = precioProducto.getUnidadPrecio();
+
+                if (unidadSolicitada == unidadPrecio) {
+                        return precioProducto.getPrecio();
+                }
+
+                if (unidadPrecio == UnidadPrecio.CAJON
+                                && unidadSolicitada == UnidadPrecio.MAPLE) {
+
+                        return precioProducto.getPrecio()
+                                        .divide(
+                                                        BigDecimal.valueOf(MAPLES_POR_CAJON),
+                                                        2,
+                                                        RoundingMode.HALF_UP);
+                }
+
+                if (unidadPrecio == UnidadPrecio.MAPLE
+                                && unidadSolicitada == UnidadPrecio.CAJON) {
+
+                        return precioProducto.getPrecio()
+                                        .multiply(
+                                                        BigDecimal.valueOf(MAPLES_POR_CAJON));
+                }
+
+                throw new IllegalArgumentException(
+                                "No existe una conversión entre "
+                                                + unidadPrecio
+                                                + " y "
+                                                + unidadSolicitada);
+        }
+
+        private RemitoResponse construirResponse(Remito remito) {
+
+                List<DetalleRemito> detalles = detalleRemitoRepository.findByRemitoId(
+                                remito.getId());
+
+                List<DetalleRemitoResponse> detalleResponses = detalles.stream()
+                                .map(remitoMapper::toDetalleResponse)
+                                .toList();
+
+                BigDecimal total = detalleResponses.stream()
+                                .map(DetalleRemitoResponse::importe)
+                                .reduce(
+                                                BigDecimal.ZERO,
+                                                BigDecimal::add);
+
+                return remitoMapper.toResponse(
+                                remito,
+                                detalleResponses,
+                                total);
+        }
 }
