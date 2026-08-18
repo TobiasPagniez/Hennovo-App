@@ -34,6 +34,7 @@ import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.awt.Color;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +47,18 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
 
     
     private static final NumberFormat FORMATO_MONEDA = NumberFormat.getNumberInstance(new Locale("es", "AR"));
+        
+        private static final Color VERDE_HENNOVO =
+                new Color(198, 221, 190);
+
+        private static final Color VERDE_CLARO =
+                new Color(232, 242, 228);
+
+        private static final Color GRIS_CLARO =
+                new Color(245, 245, 245);
+
+        private static final Color GRIS_BORDE =
+                new Color(190, 190, 190);        
 
     @Override
     public byte[] generarPdf(Long remitoId) {
@@ -109,6 +122,22 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
                 65,
                 35
         });
+
+        Paragraph aviso =
+                new Paragraph(
+                        "DOCUMENTO NO VÁLIDO COMO FACTURA",
+                        new Font(
+                                Font.HELVETICA,
+                                8,
+                                Font.BOLD
+                        )
+                );
+
+        aviso.setAlignment(Element.ALIGN_CENTER);
+
+        document.add(aviso);
+
+        document.add(new Paragraph(" "));        
 
         // Logo
         PdfPCell celdaLogo = new PdfPCell();
@@ -255,6 +284,14 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
 
         tabla.addCell(encabezado);
 
+        encabezado.setBackgroundColor(
+                VERDE_HENNOVO
+        );
+
+        encabezado.setBorderColor(
+                GRIS_BORDE
+        );        
+
         PdfPCell datos = new PdfPCell();
 
         datos.setPadding(8);
@@ -337,44 +374,62 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
                 tabla,
                 "IMPORTE",
                 fuenteEncabezado);
-
+        
+        int fila = 0;
         for (DetalleRemito detalle : detalles) {
 
-            agregarCelda(
-                    tabla,
-                    String.valueOf(
-                            detalle.getCantidad()),
-                    fuenteNormal,
-                    Element.ALIGN_CENTER);
+            boolean filaPar = fila % 2 == 0;
 
-            agregarCelda(
-                    tabla,
-                    obtenerDescripcion(
-                            detalle.getProducto()),
-                    fuenteNormal,
-                    Element.ALIGN_LEFT);
+                Color fondo =
+                        filaPar
+                                ? Color.WHITE
+                                : GRIS_CLARO;            
 
-            agregarCelda(
-                    tabla,
-                    "$ "
-                            + formatearMoneda(
-                                    detalle.getPrecioUnitario()),
-                    fuenteNormal,
-                    Element.ALIGN_RIGHT);
+                agregarCelda(
+                        tabla,
+                        String.valueOf(detalle.getCantidad()),
+                        fuenteNormal,
+                        Element.ALIGN_CENTER,
+                        fondo
+                );
 
-            agregarCelda(
-                    tabla,
-                    "$ "
-                            + formatearMoneda(
-                                    detalle.getImporte()),
-                    fuenteNormal,
-                    Element.ALIGN_RIGHT);
+                agregarCelda(
+                        tabla,
+                        obtenerDescripcion(detalle.getProducto()),
+                        fuenteNormal,
+                        Element.ALIGN_LEFT,
+                        fondo
+                );
+
+                agregarCelda(
+                        tabla,
+                        "$ " + formatearMoneda(
+                                detalle.getPrecioUnitario()
+                        ),
+                        fuenteNormal,
+                        Element.ALIGN_RIGHT,
+                        fondo
+                );
+
+                agregarCelda(
+                        tabla,
+                        "$ " + formatearMoneda(
+                                detalle.getImporte()
+                        ),
+                        fuenteNormal,
+                        Element.ALIGN_RIGHT,
+                        fondo
+                );
+
+                fila++;
         }
 
         document.add(tabla);
 
         document.add(
                 new Paragraph(" "));
+        
+        
     }
 
     // =========================================================
@@ -399,8 +454,8 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
 
         tabla.setWidths(
                 new float[] {
-                        60,
-                        40
+                        55,
+                        45
                 });
 
         // Facturación
@@ -421,28 +476,50 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
         tabla.addCell(facturacion);
 
         // Total
-        PdfPCell totalCelda = new PdfPCell(
-                new Phrase(
-                        "TOTAL  $ "
-                                + formatearMoneda(
-                                        total)));
+        PdfPCell totalCelda =
+                new PdfPCell();
 
         totalCelda.setBorder(
-                Rectangle.NO_BORDER);
+                Rectangle.NO_BORDER
+        );
+
+        totalCelda.setBackgroundColor(
+                VERDE_HENNOVO
+        );
+
+        totalCelda.setPadding(8);
 
         totalCelda.setHorizontalAlignment(
-                Element.ALIGN_RIGHT);
+                Element.ALIGN_RIGHT
+        );
 
-        Font fuenteTotal = new Font(
-                Font.HELVETICA,
-                13,
-                Font.BOLD);
+        Font fuenteTotal =
+                new Font(
+                        Font.HELVETICA,
+                        14,
+                        Font.BOLD
+                );
 
-        totalCelda.setPhrase(
-                new Phrase(
-                        "TOTAL  $ "
-                                + formatearMoneda(total),
-                        fuenteTotal));
+        totalCelda.addElement(
+                new Paragraph(
+                        "TOTAL",
+                        fuenteTotal
+                )
+        );
+
+        Paragraph importeTotal =
+                new Paragraph(
+                        "$ " + formatearMoneda(total),
+                        fuenteTotal
+                );
+
+        importeTotal.setAlignment(
+                Element.ALIGN_RIGHT
+        );
+
+        totalCelda.addElement(
+                importeTotal
+        );
 
         tabla.addCell(totalCelda);
 
@@ -458,66 +535,88 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
             Remito remito)
             throws DocumentException {
 
-        document.add(
-                new Paragraph(" "));
+        document.add(new Paragraph(" "));
 
-        Paragraph texto = new Paragraph(
-                "DOCUMENTO NO VÁLIDO COMO FACTURA");
+        Paragraph pie = new Paragraph(
+                "HENNOVO",
+                new Font(Font.HELVETICA, 8));
 
-        texto.setAlignment(
-                Element.ALIGN_CENTER);
+        pie.setAlignment(Element.ALIGN_CENTER);
 
-        texto.getFont().setSize(8);
-
-        document.add(texto);
+        document.add(pie);
     }
 
     // =========================================================
     // MÉTODOS AUXILIARES
     // =========================================================
 
-    private void agregarCeldaEncabezado(
-            PdfPTable tabla,
-            String texto,
-            Font fuente) {
+        private void agregarCeldaEncabezado(
+                PdfPTable tabla,
+                String texto,
+                Font fuente) {
 
-        PdfPCell celda = new PdfPCell(
-                new Phrase(
-                        texto,
-                        fuente));
+        PdfPCell celda =
+                new PdfPCell(
+                        new Phrase(
+                                texto,
+                                fuente
+                        )
+                );
+
+        celda.setBackgroundColor(
+                VERDE_HENNOVO
+        );
 
         celda.setHorizontalAlignment(
-                Element.ALIGN_CENTER);
+                Element.ALIGN_CENTER
+        );
 
         celda.setVerticalAlignment(
-                Element.ALIGN_MIDDLE);
+                Element.ALIGN_MIDDLE
+        );
+
+        celda.setPadding(7);
+
+        celda.setBorderColor(
+                GRIS_BORDE
+        );
+
+        tabla.addCell(celda);
+        }
+
+        private void agregarCelda(
+                PdfPTable tabla,
+                String texto,
+                Font fuente,
+                int alineacion,
+                Color fondo) {
+
+        PdfPCell celda =
+                new PdfPCell(
+                        new Phrase(
+                                texto,
+                                fuente
+                        )
+                );
+
+        celda.setBackgroundColor(fondo);
+
+        celda.setHorizontalAlignment(
+                alineacion
+        );
+
+        celda.setVerticalAlignment(
+                Element.ALIGN_MIDDLE
+        );
 
         celda.setPadding(6);
 
-        tabla.addCell(celda);
-    }
-
-    private void agregarCelda(
-            PdfPTable tabla,
-            String texto,
-            Font fuente,
-            int alineacion) {
-
-        PdfPCell celda = new PdfPCell(
-                new Phrase(
-                        texto,
-                        fuente));
-
-        celda.setHorizontalAlignment(
-                alineacion);
-
-        celda.setVerticalAlignment(
-                Element.ALIGN_MIDDLE);
-
-        celda.setPadding(5);
+        celda.setBorderColor(
+                GRIS_BORDE
+        );
 
         tabla.addCell(celda);
-    }
+        }
 
     private String obtenerDescripcion(Producto producto) {
 
