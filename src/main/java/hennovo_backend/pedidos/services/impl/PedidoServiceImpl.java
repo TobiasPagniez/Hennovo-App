@@ -3,6 +3,8 @@ package hennovo_backend.pedidos.services.impl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,242 +42,270 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class PedidoServiceImpl implements PedidoService {
 
-        private final PedidoRepository pedidoRepository;
-        private final DetallePedidoRepository detallePedidoRepository;
-        private final ClienteRepository clienteRepository;
-        private final ProductoRepository productoRepository;
-        private final PrecioProductoRepository precioProductoRepository;
-        private final ListaPrecioRepository listaPrecioRepository;
-        private final UsuarioRepository usuarioRepository;
+    private final PedidoRepository pedidoRepository;
+    private final DetallePedidoRepository detallePedidoRepository;
+    private final ClienteRepository clienteRepository;
+    private final ProductoRepository productoRepository;
+    private final PrecioProductoRepository precioProductoRepository;
+    private final ListaPrecioRepository listaPrecioRepository;
+    private final UsuarioRepository usuarioRepository;
 
-        private final PedidoMapper pedidoMapper;
-        private final DetallePedidoMapper detallePedidoMapper;
+    private final PedidoMapper pedidoMapper;
+    private final DetallePedidoMapper detallePedidoMapper;
 
-        // constante de conversion
-        private static final int MAPLES_POR_CAJON = 12;
+    // constante de conversion
+    private static final int MAPLES_POR_CAJON = 12;
 
-        @Override
-        public PedidoResponse crear(PedidoRequest request) {
+    @Override
+    public PedidoResponse crear(PedidoRequest request) {
 
-                Cliente cliente = clienteRepository.findById(request.clienteId())
-                                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
+        Cliente cliente = clienteRepository.findById(request.clienteId())
+                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
-                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-                String email = authentication.getName();
+        String email = authentication.getName();
 
-                Usuario usuario = usuarioRepository.findByEmail(email)
-                                .orElseThrow(() -> new NotFoundException(
-                                                "Usuario autenticado no encontrado"));
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(
+                        "Usuario autenticado no encontrado"));
 
-                ListaPrecio listaVigente = obtenerListaVigente();
+        ListaPrecio listaVigente = obtenerListaVigente();
 
-                Pedido pedido = pedidoMapper.toEntity(
-                                request,
-                                cliente,
-                                usuario);
+        Pedido pedido = pedidoMapper.toEntity(
+                request,
+                cliente,
+                usuario);
 
-                pedido = pedidoRepository.save(pedido);
+        pedido = pedidoRepository.save(pedido);
 
-                crearDetalles(pedido, request.detalles(), cliente, listaVigente);
+        crearDetalles(pedido, request.detalles(), cliente, listaVigente);
 
-                return construirResponse(pedido);
+        return construirResponse(pedido);
+    }
+
+    private ListaPrecio obtenerListaVigente() {
+
+        return listaPrecioRepository.findByFechaHastaIsNull()
+                .orElseThrow(() -> new NotFoundException(
+                        "No existe una lista de precios vigente"));
+    }
+
+    private PrecioProducto obtenerPrecio(
+            Producto producto,
+            Cliente cliente,
+            ListaPrecio listaVigente) {
+
+        return precioProductoRepository
+                .findByProductoIdAndCategoriaIdAndListaId(
+                        producto.getId(),
+                        cliente.getCategoria().getId(),
+                        listaVigente.getId())
+                .orElseThrow(() -> new NotFoundException(
+                        "No existe un precio para el producto "
+                                + producto.getId()
+                                + " en la categoría "
+                                + cliente.getCategoria().getId()
+                                + " dentro de la lista vigente"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PedidoResponse obtenerPorId(Long id) {
+
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
+
+        return construirResponse(pedido);
+    }
+    
+    private PedidoResponse construirResponse(Pedido pedido) {
+
+    List<DetallePedido> detalles =
+            detallePedidoRepository.findByPedidoId(pedido.getId());
+
+    return construirResponse(pedido, detalles);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PedidoResponse> listar() {
+
+        List<Pedido> pedidos = pedidoRepository.findAll();
+
+        if (pedidos.isEmpty()) {
+            return List.of();
         }
 
-        private ListaPrecio obtenerListaVigente() {
+        List<Long> pedidoIds = pedidos.stream()
+                .map(Pedido::getId)
+                .toList();
 
-                return listaPrecioRepository.findByFechaHastaIsNull()
-                                .orElseThrow(() -> new NotFoundException(
-                                                "No existe una lista de precios vigente"));
+        List<DetallePedido> detalles = detallePedidoRepository.findByPedidoIdIn(pedidoIds);
+
+        Map<Long, List<DetallePedido>> detallesPorPedido = detalles.stream()
+                .collect(Collectors.groupingBy(
+                        detalle -> detalle.getPedido().getId()));
+
+        return pedidos.stream()
+                .map(pedido -> construirResponse(
+                        pedido,
+                        detallesPorPedido.getOrDefault(
+                                pedido.getId(),
+                                List.of())))
+                .toList();
+    }
+
+    private PedidoResponse construirResponse(
+            Pedido pedido,
+            List<DetallePedido> detalles) {
+
+        List<DetallePedidoResponse> detalleResponses = detalles.stream()
+                .map(detallePedidoMapper::toResponse)
+                .toList();
+
+        BigDecimal total = detalleResponses.stream()
+                .map(DetallePedidoResponse::subtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return pedidoMapper.toResponse(
+                pedido,
+                detalleResponses,
+                total);
+    }
+
+    @Override
+    public PedidoResponse actualizar(
+            Long id,
+            PedidoRequest request) {
+
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
+
+        if (pedido.getEntregado()) {
+            throw new BadRequestException(
+                    "No se puede modificar un pedido entregado");
         }
 
-        private PrecioProducto obtenerPrecio(
-                        Producto producto,
-                        Cliente cliente,
-                        ListaPrecio listaVigente) {
+        Cliente cliente = clienteRepository.findById(
+                request.clienteId()).orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
-                return precioProductoRepository
-                                .findByProductoIdAndCategoriaIdAndListaId(
-                                                producto.getId(),
-                                                cliente.getCategoria().getId(),
-                                                listaVigente.getId())
-                                .orElseThrow(() -> new NotFoundException(
-                                                "No existe un precio para el producto "
-                                                                + producto.getId()
-                                                                + " en la categoría "
-                                                                + cliente.getCategoria().getId()
-                                                                + " dentro de la lista vigente"));
+        ListaPrecio listaVigente = obtenerListaVigente();
+
+        pedido.setCliente(cliente);
+        pedido.setFecha(request.fecha());
+        pedido.setObservaciones(request.observaciones());
+
+        pedidoRepository.save(pedido);
+
+        detallePedidoRepository.deleteByPedidoId(id);
+
+        crearDetalles(
+                pedido,
+                request.detalles(),
+                cliente,
+                listaVigente);
+
+        return construirResponse(pedido);
+    }
+
+    private BigDecimal obtenerPrecioUnitario(
+            PrecioProducto precioProducto,
+            UnidadPrecio unidadSolicitada) {
+
+        UnidadPrecio unidadPrecio = precioProducto.getUnidadPrecio();
+
+        if (unidadSolicitada == unidadPrecio) {
+            return precioProducto.getPrecio();
         }
 
-        @Override
-        @Transactional(readOnly = true)
-        public PedidoResponse obtenerPorId(Long id) {
+        if (unidadPrecio == UnidadPrecio.CAJON
+                && unidadSolicitada == UnidadPrecio.MAPLE) {
 
-                Pedido pedido = pedidoRepository.findById(id)
-                                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
-
-                return construirResponse(pedido);
+            return precioProducto.getPrecio()
+                    .divide(
+                            BigDecimal.valueOf(MAPLES_POR_CAJON),
+                            2,
+                            RoundingMode.HALF_UP);
         }
 
-        @Override
-        @Transactional(readOnly = true)
-        public List<PedidoResponse> listar() {
-                return pedidoRepository.findAll().stream()
-                                .map(this::construirResponse)
-                                .toList();
+        if (unidadPrecio == UnidadPrecio.MAPLE
+                && unidadSolicitada == UnidadPrecio.CAJON) {
+
+            return precioProducto.getPrecio()
+                    .multiply(
+                            BigDecimal.valueOf(MAPLES_POR_CAJON));
         }
 
-        private PedidoResponse construirResponse(Pedido pedido) {
+        throw new BadRequestException(
+                "No existe una conversión entre "
+                        + unidadPrecio
+                        + " y "
+                        + unidadSolicitada);
+    }
 
-                List<DetallePedido> detalles = detallePedidoRepository.findByPedidoId(
-                                pedido.getId());
+    private BigDecimal crearDetalles(
+            Pedido pedido,
+            List<DetallePedidoRequest> detallesRequest,
+            Cliente cliente,
+            ListaPrecio listaVigente) {
 
-                List<DetallePedidoResponse> detalleResponses = detalles.stream()
-                                .map(detallePedidoMapper::toResponse)
-                                .toList();
+        BigDecimal total = BigDecimal.ZERO;
 
-                BigDecimal total = detalleResponses.stream()
-                                .map(DetallePedidoResponse::subtotal)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        for (DetallePedidoRequest detalleRequest : detallesRequest) {
 
-                return pedidoMapper.toResponse(
-                                pedido,
-                                detalleResponses,
-                                total);
+            Producto producto = productoRepository
+                    .findById(detalleRequest.productoId())
+                    .orElseThrow(() -> new NotFoundException(
+                            "Producto no encontrado: "
+                                    + detalleRequest.productoId()));
+
+            PrecioProducto precioProducto = obtenerPrecio(
+                    producto,
+                    cliente,
+                    listaVigente);
+
+            BigDecimal precioUnitario = obtenerPrecioUnitario(
+                    precioProducto,
+                    detalleRequest.unidad());
+
+            DetallePedido detalle = detallePedidoMapper.toEntity(
+                    detalleRequest,
+                    producto);
+
+            detalle.setPedido(pedido);
+            detalle.setPrecioUnitario(precioUnitario);
+
+            detallePedidoRepository.save(detalle);
+
+            BigDecimal subtotal = precioUnitario.multiply(
+                    BigDecimal.valueOf(detalleRequest.cantidad()));
+
+            total = total.add(subtotal);
         }
 
-        @Override
-        public PedidoResponse actualizar(
-                        Long id,
-                        PedidoRequest request) {
+        return total;
+    }
 
-                Pedido pedido = pedidoRepository.findById(id)
-                                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
+    @Override
+    public void marcarComoEntregado(Long id) {
 
-                if (pedido.getEntregado()) {
-                        throw new BadRequestException(
-                                        "No se puede modificar un pedido entregado");
-                }
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
 
-                Cliente cliente = clienteRepository.findById(
-                                request.clienteId()).orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
+        pedido.setEntregado(true);
 
-                ListaPrecio listaVigente = obtenerListaVigente();
+        pedidoRepository.save(pedido);
+    }
 
-                pedido.setCliente(cliente);
-                pedido.setFecha(request.fecha());
-                pedido.setObservaciones(request.observaciones());
+    @Override
+    public void marcarComoPagado(Long id) {
 
-                pedidoRepository.save(pedido);
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
 
-                detallePedidoRepository.deleteByPedidoId(id);
+        pedido.setPagado(true);
 
-                crearDetalles(
-                                pedido,
-                                request.detalles(),
-                                cliente,
-                                listaVigente);
-
-                return construirResponse(pedido);
-        }
-
-        private BigDecimal obtenerPrecioUnitario(
-                        PrecioProducto precioProducto,
-                        UnidadPrecio unidadSolicitada) {
-
-                UnidadPrecio unidadPrecio = precioProducto.getUnidadPrecio();
-
-                if (unidadSolicitada == unidadPrecio) {
-                        return precioProducto.getPrecio();
-                }
-
-                if (unidadPrecio == UnidadPrecio.CAJON
-                                && unidadSolicitada == UnidadPrecio.MAPLE) {
-
-                        return precioProducto.getPrecio()
-                                        .divide(
-                                                        BigDecimal.valueOf(MAPLES_POR_CAJON),
-                                                        2,
-                                                        RoundingMode.HALF_UP);
-                }
-
-                if (unidadPrecio == UnidadPrecio.MAPLE
-                                && unidadSolicitada == UnidadPrecio.CAJON) {
-
-                        return precioProducto.getPrecio()
-                                        .multiply(
-                                                        BigDecimal.valueOf(MAPLES_POR_CAJON));
-                }
-
-                throw new BadRequestException(
-                                "No existe una conversión entre "
-                                                + unidadPrecio
-                                                + " y "
-                                                + unidadSolicitada);
-        }
-
-        private BigDecimal crearDetalles(
-                        Pedido pedido,
-                        List<DetallePedidoRequest> detallesRequest,
-                        Cliente cliente,
-                        ListaPrecio listaVigente) {
-
-                BigDecimal total = BigDecimal.ZERO;
-
-                for (DetallePedidoRequest detalleRequest : detallesRequest) {
-
-                        Producto producto = productoRepository
-                                        .findById(detalleRequest.productoId())
-                                        .orElseThrow(() -> new NotFoundException(
-                                                        "Producto no encontrado: "
-                                                                        + detalleRequest.productoId()));
-
-                        PrecioProducto precioProducto = obtenerPrecio(
-                                        producto,
-                                        cliente,
-                                        listaVigente);
-
-                        BigDecimal precioUnitario = obtenerPrecioUnitario(
-                                        precioProducto,
-                                        detalleRequest.unidad());
-
-                        DetallePedido detalle = detallePedidoMapper.toEntity(
-                                        detalleRequest,
-                                        producto);
-
-                        detalle.setPedido(pedido);
-                        detalle.setPrecioUnitario(precioUnitario);
-
-                        detallePedidoRepository.save(detalle);
-
-                        BigDecimal subtotal = precioUnitario.multiply(
-                                        BigDecimal.valueOf(detalleRequest.cantidad()));
-
-                        total = total.add(subtotal);
-                }
-
-                return total;
-        }
-
-        @Override
-        public void marcarComoEntregado(Long id) {
-
-                Pedido pedido = pedidoRepository.findById(id)
-                                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
-
-                pedido.setEntregado(true);
-
-                pedidoRepository.save(pedido);
-        }
-
-        @Override
-        public void marcarComoPagado(Long id) {
-
-                Pedido pedido = pedidoRepository.findById(id)
-                                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
-
-                pedido.setPagado(true);
-
-                pedidoRepository.save(pedido);
-        }
+        pedidoRepository.save(pedido);
+    }
 }

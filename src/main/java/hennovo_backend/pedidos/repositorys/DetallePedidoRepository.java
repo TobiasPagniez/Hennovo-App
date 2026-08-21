@@ -17,4 +17,6 @@ public interface DetallePedidoRepository
     List<DetallePedido> findByPedidoClienteId(Long clienteId);
 
     void deleteByPedidoId(Long pedidoId);
+    List<DetallePedido> findByPedidoIdIn(List<Long> pedidoIds);
+
 }
