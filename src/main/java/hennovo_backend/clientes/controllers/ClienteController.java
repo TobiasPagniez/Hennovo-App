@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import hennovo_backend.clientes.dtos.request.ClienteRequestDTO;
 import hennovo_backend.clientes.dtos.response.ClienteResponseDTO;
 import hennovo_backend.clientes.services.interfaces.ClienteService;
+import hennovo_backend.pagos.dtos.response.CuentaCorrienteResponseDTO;
+import hennovo_backend.pagos.services.interfaces.CuentaCorrienteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class ClienteController {
 
     private final ClienteService clienteService;
+    private final CuentaCorrienteService cuentaCorrienteService;
 
     @PostMapping
     public ResponseEntity<ClienteResponseDTO> crear(
@@ -55,6 +58,14 @@ public class ClienteController {
         ClienteResponseDTO cliente = clienteService.obtenerPorId(id);
 
         return ResponseEntity.ok(cliente);
+    }
+
+    @GetMapping("/{clienteId}/cuenta-corriente")
+    public ResponseEntity<CuentaCorrienteResponseDTO> obtenerCuentaCorriente(
+            @PathVariable Long clienteId) {
+
+        return ResponseEntity.ok(
+                cuentaCorrienteService.obtenerPorCliente(clienteId));
     }
 
     @GetMapping

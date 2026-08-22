@@ -51,6 +51,8 @@ public class PedidoMapper {
                 pedido.getObservaciones(),
                 pedido.getCliente().getId(),
                 pedido.getUsuario().getId(),
+                pedido.getRuta() != null ? pedido.getRuta().getId() : null,
+                pedido.getOrdenRuta(),
                 detalles,
                 total
         );

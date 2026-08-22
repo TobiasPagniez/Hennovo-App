@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import hennovo_backend.auth.entitys.Usuario;
 import hennovo_backend.clientes.entitys.Cliente;
+import hennovo_backend.rutas.entitys.Ruta;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -49,4 +50,11 @@ public class Pedido {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ruta_id")
+    private Ruta ruta;
+
+    @Column
+    private Integer ordenRuta;    
 }

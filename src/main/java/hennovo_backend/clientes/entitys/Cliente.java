@@ -34,6 +34,9 @@ public class Cliente {
     private String direccion;
 
     @Column(nullable = false)
+    private String localidad;
+
+    @Column(nullable = false)
     private String telefono;
 
     @Column(nullable = false)

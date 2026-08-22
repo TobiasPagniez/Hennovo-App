@@ -6,23 +6,25 @@ import java.util.List;
 
 public record PedidoResponse(
 
-        Long id,
+                Long id,
 
-        LocalDate fecha,
+                LocalDate fecha,
 
-        Boolean entregado,
+                Boolean entregado,
 
-        Boolean pagado,
+                Boolean pagado,
 
-        String observaciones,
+                String observaciones,
 
-        Long clienteId,
+                Long clienteId,
 
-        Long usuarioId,
+                Long usuarioId,
 
-        List<DetallePedidoResponse> detalles,
+                Long rutaId,
 
-        BigDecimal total
+                Integer ordenRuta,
 
-) {
+                List<DetallePedidoResponse> detalles,
+
+                BigDecimal total) {
 }
