@@ -16,4 +16,8 @@ public interface ProductoService {
     ProductoResponse obtenerPorId(Long id);
 
     List<ProductoResponse> listarActivos();
+
+    List<ProductoResponse> listarTodos();
+
+    ProductoResponse reactivar(Long id);
 }
