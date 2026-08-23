@@ -5,6 +5,8 @@ import hennovo_backend.productos.dtos.ProductoResponse;
 import hennovo_backend.productos.entity.Producto;
 import hennovo_backend.productos.mapper.ProductoMapper;
 import hennovo_backend.productos.repository.ProductoRepository;
+import hennovo_backend.shared.exception.ConflictException;
+import hennovo_backend.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +27,7 @@ public class ProductoServiceImpl implements ProductoService {
                 request.getTamaño(),
                 request.getPresentacion())) {
 
-            throw new RuntimeException("El producto ya existe.");
+            throw new ConflictException("El producto ya existe.");
         }
 
         Producto producto = productoMapper.toEntity(request);
@@ -41,7 +43,7 @@ public class ProductoServiceImpl implements ProductoService {
     public ProductoResponse actualizar(Long id, ProductoRequest request) {
 
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
         if (productoRepository.existsByTipoHuevoAndTamañoAndPresentacion(
                 request.getTipoHuevo(),
@@ -52,7 +54,7 @@ public class ProductoServiceImpl implements ProductoService {
                         || !producto.getTamaño().equals(request.getTamaño())
                         || !producto.getPresentacion().equals(request.getPresentacion()))) {
 
-            throw new RuntimeException("Ya existe un producto con esos datos.");
+            throw new ConflictException("Ya existe un producto con esos datos.");
         }
 
         producto.setTipoHuevo(request.getTipoHuevo());
@@ -68,7 +70,7 @@ public class ProductoServiceImpl implements ProductoService {
     public void desactivar(Long id) {
 
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
         producto.setActivo(false);
 
@@ -79,7 +81,7 @@ public class ProductoServiceImpl implements ProductoService {
     public ProductoResponse obtenerPorId(Long id) {
 
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
         return productoMapper.toResponse(producto);
     }
@@ -91,5 +93,27 @@ public class ProductoServiceImpl implements ProductoService {
                 .stream()
                 .map(productoMapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    public List<ProductoResponse> listarTodos() {
+
+        return productoRepository.findAll()
+                .stream()
+                .map(productoMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public ProductoResponse reactivar(Long id) {
+
+        Producto producto = productoRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
+
+        producto.setActivo(true);
+
+        return productoMapper.toResponse(
+                productoRepository.save(producto)
+        );
     }
 }

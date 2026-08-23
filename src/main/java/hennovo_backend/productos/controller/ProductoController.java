@@ -31,6 +31,12 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listarActivos());
     }
 
+    @GetMapping("/todos")
+    public ResponseEntity<List<ProductoResponse>> listarTodos() {
+
+        return ResponseEntity.ok(productoService.listarTodos());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ProductoResponse> obtenerPorId(
             @PathVariable Long id) {
@@ -55,6 +61,13 @@ public class ProductoController {
         productoService.desactivar(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<ProductoResponse> reactivar(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(productoService.reactivar(id));
     }
 
 }
