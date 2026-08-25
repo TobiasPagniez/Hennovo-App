@@ -2,6 +2,7 @@ package hennovo_backend.pedidos.services.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -131,7 +132,17 @@ public class PedidoServiceImpl implements PedidoService {
     @Transactional(readOnly = true)
     public List<PedidoResponse> listar() {
 
-        List<Pedido> pedidos = pedidoRepository.findAll();
+        return construirListaResponse(pedidoRepository.findAll());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PedidoResponse> listarPorFecha(LocalDate fecha) {
+
+        return construirListaResponse(pedidoRepository.findByFecha(fecha));
+    }
+
+    private List<PedidoResponse> construirListaResponse(List<Pedido> pedidos) {
 
         if (pedidos.isEmpty()) {
             return List.of();

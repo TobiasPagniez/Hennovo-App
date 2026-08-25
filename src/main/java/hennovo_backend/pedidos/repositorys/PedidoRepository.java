@@ -9,6 +9,8 @@ import hennovo_backend.pedidos.entitys.Pedido;
 
 
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
+    List<Pedido> findByFecha(LocalDate fecha);
+
     //para el modulo de ruta
     List<Pedido> findByRutaIdOrderByOrdenRutaAsc(Long rutaId);
 

@@ -18,6 +18,8 @@ public record PedidoResponse(
 
                 Long clienteId,
 
+                String clienteNombre,
+
                 Long usuarioId,
 
                 Long rutaId,

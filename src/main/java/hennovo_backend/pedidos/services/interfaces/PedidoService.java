@@ -1,5 +1,6 @@
 package hennovo_backend.pedidos.services.interfaces;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import hennovo_backend.pedidos.dtos.request.PedidoRequest;
@@ -12,6 +13,8 @@ public interface PedidoService {
     PedidoResponse obtenerPorId(Long id);
 
     List<PedidoResponse> listar();
+
+    List<PedidoResponse> listarPorFecha(LocalDate fecha);
 
     PedidoResponse actualizar(Long id, PedidoRequest request);
 
