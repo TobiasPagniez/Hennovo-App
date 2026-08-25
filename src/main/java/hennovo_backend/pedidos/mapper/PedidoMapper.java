@@ -50,6 +50,7 @@ public class PedidoMapper {
                 pedido.getPagado(),
                 pedido.getObservaciones(),
                 pedido.getCliente().getId(),
+                pedido.getCliente().getNombre(),
                 pedido.getUsuario().getId(),
                 pedido.getRuta() != null ? pedido.getRuta().getId() : null,
                 pedido.getOrdenRuta(),

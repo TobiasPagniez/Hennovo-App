@@ -1,5 +1,6 @@
 package hennovo_backend.pedidos.controllers;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import hennovo_backend.pedidos.dtos.request.PedidoRequest;
@@ -42,7 +44,13 @@ public class PedidoController {
         }
 
         @GetMapping
-        public ResponseEntity<List<PedidoResponse>> listar() {
+        public ResponseEntity<List<PedidoResponse>> listar(
+                        @RequestParam(required = false) LocalDate fecha) {
+                if (fecha != null) {
+                        return ResponseEntity.ok(
+                                        pedidoService.listarPorFecha(fecha));
+                }
+
                 return ResponseEntity.ok(
                                 pedidoService.listar());
         }
