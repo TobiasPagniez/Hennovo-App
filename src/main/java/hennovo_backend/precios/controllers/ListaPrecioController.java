@@ -41,6 +41,14 @@ public class ListaPrecioController {
         );
     }
 
+    @GetMapping("/vigente")
+    public ResponseEntity<ListaPrecioResponse> obtenerVigente() {
+
+        return ResponseEntity.ok(
+                listaPrecioService.obtenerVigente()
+        );
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ListaPrecioResponse> obtenerPorId(
             @PathVariable Long id) {

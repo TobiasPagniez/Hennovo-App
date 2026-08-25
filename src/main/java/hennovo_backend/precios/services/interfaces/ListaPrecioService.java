@@ -12,4 +12,6 @@ public interface ListaPrecioService {
     ListaPrecioResponse obtenerPorId(Long id);
 
     List<ListaPrecioResponse> listar();
+
+    ListaPrecioResponse obtenerVigente();
 }

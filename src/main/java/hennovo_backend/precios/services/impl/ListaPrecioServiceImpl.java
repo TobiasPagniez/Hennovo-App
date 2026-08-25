@@ -120,4 +120,14 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
                 .map(precioProductoMapper::toResponse)
                 .toList();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ListaPrecioResponse obtenerVigente() {
+        ListaPrecio listaPrecio = listaPrecioRepository.findByFechaHastaIsNull()
+                .orElseThrow(() -> new NotFoundException("No existe una lista de precios vigente"));
+
+        return listaPrecioMapper.toResponse(listaPrecio, obtenerPrecios(listaPrecio.getId()));
+    }    
+
 }
