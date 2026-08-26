@@ -17,6 +17,8 @@ public record PedidoRequest(
 
         String observaciones,
 
+        String banco,
+
         @NotEmpty(message = "El pedido debe tener al menos un producto")
         List<@Valid DetallePedidoRequest> detalles
 

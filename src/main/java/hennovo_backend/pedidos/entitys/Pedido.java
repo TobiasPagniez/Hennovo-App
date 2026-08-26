@@ -43,6 +43,9 @@ public class Pedido {
     @Column(length = 500)
     private String observaciones;
 
+    @Column(length = 100)
+    private String banco;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;

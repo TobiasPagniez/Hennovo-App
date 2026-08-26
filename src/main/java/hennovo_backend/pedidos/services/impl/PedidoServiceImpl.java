@@ -206,6 +206,7 @@ public class PedidoServiceImpl implements PedidoService {
         pedido.setCliente(cliente);
         pedido.setFecha(request.fecha());
         pedido.setObservaciones(request.observaciones());
+        pedido.setBanco(request.banco());
 
         pedidoRepository.save(pedido);
 

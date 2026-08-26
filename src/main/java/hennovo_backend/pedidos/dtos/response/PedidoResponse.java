@@ -16,6 +16,8 @@ public record PedidoResponse(
 
                 String observaciones,
 
+                String banco,
+
                 Long clienteId,
 
                 String clienteNombre,
