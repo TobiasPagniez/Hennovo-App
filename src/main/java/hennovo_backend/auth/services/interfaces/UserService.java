@@ -14,6 +14,8 @@ public interface UserService {
 
     List<UserResponse> getAllUsers();
 
+    List<UserResponse> getEmpleadosActivos();
+
     UserResponse updateUser(Long id, UpdateUserRequest request);
 
     void deactivateUser(Long id);

@@ -69,6 +69,16 @@ public class UserServiceImpl implements UserService {
         }
 
         @Override
+        public List<UserResponse> getEmpleadosActivos() {
+
+                return usuarioRepository.findAll()
+                                .stream()
+                                .filter(u -> u.getActivo() && u.getRol().getNombre() == NombreRol.EMPLEADO)
+                                .map(userMapper::toResponse)
+                                .toList();
+        }
+
+        @Override
         public UserResponse updateUser(
                         Long id,
                         UpdateUserRequest request) {
