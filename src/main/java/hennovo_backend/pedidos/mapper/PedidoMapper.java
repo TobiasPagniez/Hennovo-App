@@ -30,6 +30,7 @@ public class PedidoMapper {
 
         pedido.setFecha(request.fecha());
         pedido.setObservaciones(request.observaciones());
+        pedido.setBanco(request.banco());
         pedido.setCliente(cliente);
         pedido.setUsuario(usuario);
         pedido.setEntregado(false);
@@ -49,6 +50,7 @@ public class PedidoMapper {
                 pedido.getEntregado(),
                 pedido.getPagado(),
                 pedido.getObservaciones(),
+                pedido.getBanco(),
                 pedido.getCliente().getId(),
                 pedido.getCliente().getNombre(),
                 pedido.getUsuario().getId(),

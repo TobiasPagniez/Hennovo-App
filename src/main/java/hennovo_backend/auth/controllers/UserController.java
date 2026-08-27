@@ -54,6 +54,14 @@ public class UserController {
         );
     }
 
+    @GetMapping("/empleados")
+    public ResponseEntity<List<UserResponse>> getEmpleados() {
+
+        return ResponseEntity.ok(
+                userService.getEmpleadosActivos()
+        );
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
