@@ -14,6 +14,7 @@ public record PlanillaVentasClienteDTO(
         BigDecimal totalPedido,
         BigDecimal saldoPendiente,
         BigDecimal saldoAFavor,
+        Integer orden,
         List<TopeProductoDTO> topes,
         CantidadesTamanoDTO cantidades
 ) {}

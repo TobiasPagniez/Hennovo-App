@@ -18,4 +18,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     //para el modulo de pagos
     List<Pedido> findByClienteIdOrderByFechaAscIdAsc(Long clienteId);
+
+    List<Pedido> findByFechaAndUsuarioId(LocalDate fecha, Long usuarioId);
 }

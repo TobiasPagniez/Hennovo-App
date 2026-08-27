@@ -63,13 +63,7 @@ public class PedidoServiceImpl implements PedidoService {
         Cliente cliente = clienteRepository.findById(request.clienteId())
                 .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        String email = authentication.getName();
-
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException(
-                        "Usuario autenticado no encontrado"));
+        Usuario usuario = obtenerUsuarioParaPedido(request.usuarioId());
 
         ListaPrecio listaVigente = obtenerListaVigente();
 
@@ -85,6 +79,21 @@ public class PedidoServiceImpl implements PedidoService {
         return construirResponse(pedido);
     }
 
+    private Usuario obtenerUsuarioParaPedido(Long usuarioIdSolicitado) {
+
+        if (usuarioIdSolicitado != null) {
+            return usuarioRepository.findById(usuarioIdSolicitado)
+                    .orElseThrow(() -> new NotFoundException(
+                            "El usuario indicado para el pedido no existe"));
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(
+                        "Usuario autenticado no encontrado"));
+    }
     private ListaPrecio obtenerListaVigente() {
 
         return listaPrecioRepository.findByFechaHastaIsNull()
