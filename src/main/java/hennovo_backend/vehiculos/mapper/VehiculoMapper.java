@@ -30,7 +30,12 @@ public class VehiculoMapper {
                 .anio(vehiculo.getAnio())
                 .kilometrajeActual(vehiculo.getKilometrajeActual())
                 .proximoServiceFecha(vehiculo.getProximoServiceFecha())
-                .proximoCambioAceiteFecha(vehiculo.getProximoCambioAceiteFecha())
+                .vencimientoSeguro(vehiculo.getVencimientoSeguro())
+                .vencimientoItv(vehiculo.getVencimientoItv())
+                .vencimientoSenasa(vehiculo.getVencimientoSenasa())
+                .proximoCambioAceiteKm(vehiculo.getProximoCambioAceiteKm())
+                .proximaRotacionAlineadoKm(vehiculo.getProximaRotacionAlineadoKm())
+                .proximoCambioCorreaKm(vehiculo.getProximoCambioCorreaKm())
                 .observacionesMantenimiento(vehiculo.getObservacionesMantenimiento())
                 .activo(vehiculo.getActivo())
                 .build();

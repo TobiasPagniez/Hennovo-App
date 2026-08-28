@@ -25,6 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VehiculoServiceImpl implements VehiculoService {
 
+    private static final int UMBRAL_KM_PROXIMO = 1000;
+
     private final VehiculoRepository vehiculoRepository;
     private final KilometrajeHistorialRepository kilometrajeHistorialRepository;
     private final VehiculoMapper vehiculoMapper;
@@ -39,7 +41,6 @@ public class VehiculoServiceImpl implements VehiculoService {
         Vehiculo vehiculo = vehiculoMapper.toEntity(request);
         Vehiculo guardado = vehiculoRepository.save(vehiculo);
 
-        // Dejamos asentado el kilometraje inicial en el historial
         registrarKilometraje(guardado, guardado.getKilometrajeActual(), "Kilometraje inicial");
 
         return vehiculoMapper.toResponse(guardado);
@@ -48,6 +49,13 @@ public class VehiculoServiceImpl implements VehiculoService {
     @Override
     public List<VehiculoResponse> listar() {
         return vehiculoRepository.findByActivoTrue().stream()
+                .map(vehiculoMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<VehiculoResponse> listarTodos() {
+        return vehiculoRepository.findAll().stream()
                 .map(vehiculoMapper::toResponse)
                 .toList();
     }
@@ -71,8 +79,16 @@ public class VehiculoServiceImpl implements VehiculoService {
         if (request.getMarca() != null) vehiculo.setMarca(request.getMarca());
         if (request.getModelo() != null) vehiculo.setModelo(request.getModelo());
         if (request.getAnio() != null) vehiculo.setAnio(request.getAnio());
+
         if (request.getProximoServiceFecha() != null) vehiculo.setProximoServiceFecha(request.getProximoServiceFecha());
-        if (request.getProximoCambioAceiteFecha() != null) vehiculo.setProximoCambioAceiteFecha(request.getProximoCambioAceiteFecha());
+        if (request.getVencimientoSeguro() != null) vehiculo.setVencimientoSeguro(request.getVencimientoSeguro());
+        if (request.getVencimientoItv() != null) vehiculo.setVencimientoItv(request.getVencimientoItv());
+        if (request.getVencimientoSenasa() != null) vehiculo.setVencimientoSenasa(request.getVencimientoSenasa());
+
+        if (request.getProximoCambioAceiteKm() != null) vehiculo.setProximoCambioAceiteKm(request.getProximoCambioAceiteKm());
+        if (request.getProximaRotacionAlineadoKm() != null) vehiculo.setProximaRotacionAlineadoKm(request.getProximaRotacionAlineadoKm());
+        if (request.getProximoCambioCorreaKm() != null) vehiculo.setProximoCambioCorreaKm(request.getProximoCambioCorreaKm());
+
         if (request.getObservacionesMantenimiento() != null) vehiculo.setObservacionesMantenimiento(request.getObservacionesMantenimiento());
 
         return vehiculoMapper.toResponse(vehiculoRepository.save(vehiculo));
@@ -84,6 +100,14 @@ public class VehiculoServiceImpl implements VehiculoService {
         Vehiculo vehiculo = obtenerVehiculo(id);
         vehiculo.setActivo(false);
         vehiculoRepository.save(vehiculo);
+    }
+
+    @Override
+    @Transactional
+    public VehiculoResponse reactivar(Long id) {
+        Vehiculo vehiculo = obtenerVehiculo(id);
+        vehiculo.setActivo(true);
+        return vehiculoMapper.toResponse(vehiculoRepository.save(vehiculo));
     }
 
     @Override
@@ -106,7 +130,7 @@ public class VehiculoServiceImpl implements VehiculoService {
 
     @Override
     public List<KilometrajeHistorialResponse> historialKilometraje(Long id) {
-        obtenerVehiculo(id); // valida que exista antes de traer el historial
+        obtenerVehiculo(id);
         return kilometrajeHistorialRepository.findByVehiculo_IdOrderByFechaDesc(id).stream()
                 .map(vehiculoMapper::toResponse)
                 .toList();
@@ -114,13 +138,36 @@ public class VehiculoServiceImpl implements VehiculoService {
 
     @Override
     public List<VehiculoResponse> consultarVencimientos(int diasAnticipacion) {
-        LocalDate limite = LocalDate.now().plusDays(diasAnticipacion);
+        LocalDate limiteFecha = LocalDate.now().plusDays(diasAnticipacion);
 
         return vehiculoRepository.findByActivoTrue().stream()
-                .filter(v -> (v.getProximoServiceFecha() != null && !v.getProximoServiceFecha().isAfter(limite))
-                        || (v.getProximoCambioAceiteFecha() != null && !v.getProximoCambioAceiteFecha().isAfter(limite)))
+                .filter(v -> tieneVencimientoProximo(v, limiteFecha))
                 .map(vehiculoMapper::toResponse)
                 .toList();
+    }
+
+    private boolean tieneVencimientoProximo(Vehiculo v, LocalDate limiteFecha) {
+
+        boolean fechaProxima =
+                fechaDentroDelLimite(v.getProximoServiceFecha(), limiteFecha)
+                        || fechaDentroDelLimite(v.getVencimientoSeguro(), limiteFecha)
+                        || fechaDentroDelLimite(v.getVencimientoItv(), limiteFecha)
+                        || fechaDentroDelLimite(v.getVencimientoSenasa(), limiteFecha);
+
+        boolean kmProximo =
+                kmDentroDelUmbral(v.getKilometrajeActual(), v.getProximoCambioAceiteKm())
+                        || kmDentroDelUmbral(v.getKilometrajeActual(), v.getProximaRotacionAlineadoKm())
+                        || kmDentroDelUmbral(v.getKilometrajeActual(), v.getProximoCambioCorreaKm());
+
+        return fechaProxima || kmProximo;
+    }
+
+    private boolean fechaDentroDelLimite(LocalDate fecha, LocalDate limite) {
+        return fecha != null && !fecha.isAfter(limite);
+    }
+
+    private boolean kmDentroDelUmbral(Integer kmActual, Integer kmObjetivo) {
+        return kmObjetivo != null && (kmObjetivo - kmActual) <= UMBRAL_KM_PROXIMO;
     }
 
     private Vehiculo obtenerVehiculo(Long id) {

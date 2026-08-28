@@ -11,7 +11,15 @@ public class UpdateVehiculoRequest {
     private String marca;
     private String modelo;
     private Integer anio;
+
     private LocalDate proximoServiceFecha;
-    private LocalDate proximoCambioAceiteFecha;
+    private LocalDate vencimientoSeguro;
+    private LocalDate vencimientoItv;
+    private LocalDate vencimientoSenasa;
+
+    private Integer proximoCambioAceiteKm;
+    private Integer proximaRotacionAlineadoKm;
+    private Integer proximoCambioCorreaKm;
+
     private String observacionesMantenimiento;
 }
