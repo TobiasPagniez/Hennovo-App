@@ -14,17 +14,19 @@ public interface VehiculoService {
 
     List<VehiculoResponse> listar();
 
+    List<VehiculoResponse> listarTodos();
+
     VehiculoResponse buscarPorId(Long id);
 
     VehiculoResponse actualizar(Long id, UpdateVehiculoRequest request);
 
     void desactivar(Long id);
 
-    // actualizar kilometraje (guarda un registro en el historial) (RF-29)
+    VehiculoResponse reactivar(Long id);
+
     VehiculoResponse actualizarKilometraje(Long id, ActualizarKilometrajeRequest request);
 
     List<KilometrajeHistorialResponse> historialKilometraje(Long id);
 
-    // vehiculos con service o cambio de aceite dentro de los proximos "diasAnticipacion" dias (RF-31)
     List<VehiculoResponse> consultarVencimientos(int diasAnticipacion);
 }

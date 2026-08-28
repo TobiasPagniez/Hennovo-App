@@ -27,7 +27,8 @@ import hennovo_backend.remitos.mapper.RemitoMapper;
 import hennovo_backend.remitos.repositorys.DetalleRemitoRepository;
 import hennovo_backend.remitos.repositorys.RemitoRepository;
 import hennovo_backend.remitos.services.interfaces.RemitoService;
-import jakarta.persistence.EntityNotFoundException;
+import hennovo_backend.shared.exception.ConflictException;
+import hennovo_backend.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -50,36 +51,31 @@ public class RemitoServiceImpl implements RemitoService {
         @Override
         public RemitoResponse crear(RemitoRequest request) {
 
-                // Buscar pedido
                 Pedido pedido = pedidoRepository.findById(request.pedidoId())
-                                .orElseThrow(() -> new EntityNotFoundException(
+                                .orElseThrow(() -> new NotFoundException(
                                                 "Pedido no encontrado"));
 
-                // Un pedido no puede tener más de un remito
                 if (remitoRepository.findByPedidoId(pedido.getId()).isPresent()) {
-                        throw new IllegalStateException(
+                        throw new ConflictException(
                                         "El pedido ya tiene un remito");
                 }
 
                 // El pedido debe estar entregado /*revisar este condicional*/
                 // if (!pedido.getEntregado()) {
-                // throw new IllegalStateException(
+                // throw new BadRequestException(
                 // "No se puede generar un remito para un pedido que no fue entregado");
                 // }
 
-                // Obtener lista de precios vigente
                 ListaPrecio listaVigente = listaPrecioRepository.findByFechaHastaIsNull()
-                                .orElseThrow(() -> new EntityNotFoundException(
+                                .orElseThrow(() -> new NotFoundException(
                                                 "No existe una lista de precios vigente"));
 
-                // Crear remito
                 Remito remito = remitoMapper.toEntity(
                                 request,
                                 pedido);
 
                 remito = remitoRepository.save(remito);
 
-                // Crear detalles
                 crearDetalles(
                                 remito,
                                 request.detalles(),
@@ -94,7 +90,7 @@ public class RemitoServiceImpl implements RemitoService {
         public RemitoResponse obtenerPorId(Long id) {
 
                 Remito remito = remitoRepository.findById(id)
-                                .orElseThrow(() -> new EntityNotFoundException(
+                                .orElseThrow(() -> new NotFoundException(
                                                 "Remito no encontrado"));
 
                 return construirResponse(remito);
@@ -115,7 +111,7 @@ public class RemitoServiceImpl implements RemitoService {
         public RemitoResponse obtenerPorPedido(Long pedidoId) {
 
                 Remito remito = remitoRepository.findByPedidoId(pedidoId)
-                                .orElseThrow(() -> new EntityNotFoundException(
+                                .orElseThrow(() -> new NotFoundException(
                                                 "El pedido no tiene un remito"));
 
                 return construirResponse(remito);
@@ -131,7 +127,7 @@ public class RemitoServiceImpl implements RemitoService {
 
                         Producto producto = productoRepository
                                         .findById(detalleRequest.productoId())
-                                        .orElseThrow(() -> new EntityNotFoundException(
+                                        .orElseThrow(() -> new NotFoundException(
                                                         "Producto no encontrado: "
                                                                         + detalleRequest.productoId()));
 
@@ -140,7 +136,7 @@ public class RemitoServiceImpl implements RemitoService {
                                                         producto.getId(),
                                                         cliente.getCategoria().getId(),
                                                         listaVigente.getId())
-                                        .orElseThrow(() -> new EntityNotFoundException(
+                                        .orElseThrow(() -> new NotFoundException(
                                                         "No existe un precio para el producto "
                                                                         + producto.getId()
                                                                         + " en la categoría "

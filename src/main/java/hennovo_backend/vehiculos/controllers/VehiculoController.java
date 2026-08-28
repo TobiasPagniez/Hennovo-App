@@ -21,7 +21,6 @@ public class VehiculoController {
 
     private final VehiculoService vehiculoService;
 
-    // registrar vehiculo (RF-28)
     @PostMapping
     public ResponseEntity<VehiculoResponse> crear(@Valid @RequestBody CreateVehiculoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(vehiculoService.crear(request));
@@ -30,6 +29,17 @@ public class VehiculoController {
     @GetMapping
     public ResponseEntity<List<VehiculoResponse>> listar() {
         return ResponseEntity.ok(vehiculoService.listar());
+    }
+
+    @GetMapping("/todos")
+    public ResponseEntity<List<VehiculoResponse>> listarTodos() {
+        return ResponseEntity.ok(vehiculoService.listarTodos());
+    }
+
+    @GetMapping("/vencimientos")
+    public ResponseEntity<List<VehiculoResponse>> consultarVencimientos(
+            @RequestParam(defaultValue = "15") int diasAnticipacion) {
+        return ResponseEntity.ok(vehiculoService.consultarVencimientos(diasAnticipacion));
     }
 
     @GetMapping("/{id}")
@@ -49,7 +59,11 @@ public class VehiculoController {
         return ResponseEntity.noContent().build();
     }
 
-    //  actualizar kilometraje (RF-29)
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<VehiculoResponse> reactivar(@PathVariable Long id) {
+        return ResponseEntity.ok(vehiculoService.reactivar(id));
+    }
+
     @PatchMapping("/{id}/kilometraje")
     public ResponseEntity<VehiculoResponse> actualizarKilometraje(@PathVariable Long id,
                                                                     @Valid @RequestBody ActualizarKilometrajeRequest request) {
@@ -59,12 +73,5 @@ public class VehiculoController {
     @GetMapping("/{id}/kilometraje/historial")
     public ResponseEntity<List<KilometrajeHistorialResponse>> historialKilometraje(@PathVariable Long id) {
         return ResponseEntity.ok(vehiculoService.historialKilometraje(id));
-    }
-
-    // RF-31: consultar vencimientos (por defecto, proximos 15 dias)
-    @GetMapping("/vencimientos")
-    public ResponseEntity<List<VehiculoResponse>> consultarVencimientos(
-            @RequestParam(defaultValue = "15") int diasAnticipacion) {
-        return ResponseEntity.ok(vehiculoService.consultarVencimientos(diasAnticipacion));
     }
 }

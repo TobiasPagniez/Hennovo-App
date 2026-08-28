@@ -19,8 +19,16 @@ public class VehiculoResponse {
     private String modelo;
     private Integer anio;
     private Integer kilometrajeActual;
+
     private LocalDate proximoServiceFecha;
-    private LocalDate proximoCambioAceiteFecha;
+    private LocalDate vencimientoSeguro;
+    private LocalDate vencimientoItv;
+    private LocalDate vencimientoSenasa;
+
+    private Integer proximoCambioAceiteKm;
+    private Integer proximaRotacionAlineadoKm;
+    private Integer proximoCambioCorreaKm;
+
     private String observacionesMantenimiento;
     private Boolean activo;
 }

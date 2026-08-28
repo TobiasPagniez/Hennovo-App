@@ -35,12 +35,17 @@ public class Vehiculo {
     @Builder.Default
     private Integer kilometrajeActual = 0;
 
-    // fechas de mantenimiento (RF-30)
+    // Mantenimiento por fecha (tramites y documentacion)
     private LocalDate proximoServiceFecha;
+    private LocalDate vencimientoSeguro;
+    private LocalDate vencimientoItv;
+    private LocalDate vencimientoSenasa;
 
-    private LocalDate proximoCambioAceiteFecha;
+    // Mantenimiento por kilometraje 
+    private Integer proximoCambioAceiteKm;
+    private Integer proximaRotacionAlineadoKm;
+    private Integer proximoCambioCorreaKm;
 
-    // mantenimientos extra
     @Column(length = 500)
     private String observacionesMantenimiento;
 
