@@ -1,5 +1,7 @@
 package hennovo_backend.plantillacarga.services.impl;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import hennovo_backend.plantillacarga.dtos.request.ActualizarCantidadDetalleRequest;
 import hennovo_backend.plantillacarga.dtos.request.AgregarDetalleCeldaRequest;
 import hennovo_backend.plantillacarga.dtos.request.ConfigurarCroquisRequest;
+import hennovo_backend.plantillacarga.dtos.request.CopiarCroquisRequest;
 import hennovo_backend.plantillacarga.dtos.request.MoverDetalleCeldaRequest;
 import hennovo_backend.plantillacarga.dtos.response.PlantillaCargaResponse;
 import hennovo_backend.plantillacarga.entitys.CeldaPlantilla;
@@ -40,13 +43,13 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PlantillaCargaResponse> obtenerPorVehiculo(Long vehiculoId) {
+    public List<PlantillaCargaResponse> obtenerPorVehiculo(Long vehiculoId, LocalDate fecha) {
 
         obtenerVehiculo(vehiculoId);
 
         return plantillaCargaRepository.findByVehiculoIdOrderByNivelAsc(vehiculoId)
                 .stream()
-                .map(plantillaCargaMapper::toResponse)
+                .map(plantilla -> plantillaCargaMapper.toResponse(plantilla, fecha))
                 .toList();
     }
 
@@ -62,7 +65,9 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
             upsertPlantilla(vehiculo, NivelCarga.SUPERIOR, "Superior", request.filas(), request.columnas());
         }
 
-        return obtenerPorVehiculo(vehiculoId);
+        // Al reconfigurar, no hay contenido para ninguna fecha todavía, así que
+        // devolver la vista de "hoy" es equivalente a cualquier otra fecha.
+        return obtenerPorVehiculo(vehiculoId, LocalDate.now());
     }
 
     private void upsertPlantilla(
@@ -96,6 +101,8 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
                 !filas.equals(plantilla.getFilas()) || !columnas.equals(plantilla.getColumnas());
 
         if (cambioDeTamano) {
+            // Esto borra el contenido de TODAS las fechas cargadas para este
+            // vehículo y nivel, no solo la fecha que se esté viendo.
             plantilla.getCeldas().clear();
             plantilla.setFilas(filas);
             plantilla.setColumnas(columnas);
@@ -133,6 +140,7 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
         detalle.setCelda(celda);
         detalle.setProducto(producto);
         detalle.setCantidad(request.cantidad());
+        detalle.setFecha(request.fecha());
 
         detalleCeldaRepository.save(detalle);
     }
@@ -169,6 +177,54 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
         DetalleCelda detalle = obtenerDetalle(detalleId);
 
         detalleCeldaRepository.delete(detalle);
+    }
+
+    @Override
+    @Transactional
+    public void copiarDia(Long vehiculoId, CopiarCroquisRequest request) {
+
+        Vehiculo vehiculo = obtenerVehiculo(vehiculoId);
+
+        List<PlantillaCarga> plantillas = plantillaCargaRepository
+                .findByVehiculoIdOrderByNivelAsc(vehiculo.getId());
+
+        for (PlantillaCarga plantilla : plantillas) {
+            for (CeldaPlantilla celda : plantilla.getCeldas()) {
+
+                List<DetalleCelda> paraBorrar = celda.getDetalles().stream()
+                        .filter(d -> d.getFecha().equals(request.fechaDestino()))
+                        .toList();
+
+                detalleCeldaRepository.deleteAll(paraBorrar);
+
+                List<DetalleCelda> paraCopiar = celda.getDetalles().stream()
+                        .filter(d -> d.getFecha().equals(request.fechaOrigen()))
+                        .toList();
+
+                List<DetalleCelda> nuevos = new ArrayList<>();
+                for (DetalleCelda origen : paraCopiar) {
+
+                    DetalleCelda copia = new DetalleCelda();
+                    copia.setCelda(celda);
+                    copia.setProducto(origen.getProducto());
+                    copia.setCantidad(origen.getCantidad());
+                    copia.setFecha(request.fechaDestino());
+
+                    nuevos.add(copia);
+                }
+
+                detalleCeldaRepository.saveAll(nuevos);
+            }
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LocalDate> obtenerFechasConContenido(Long vehiculoId) {
+
+        obtenerVehiculo(vehiculoId);
+
+        return detalleCeldaRepository.findFechasDistintasByVehiculoId(vehiculoId);
     }
 
     private DetalleCelda obtenerDetalle(Long id) {

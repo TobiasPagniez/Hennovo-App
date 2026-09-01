@@ -1,5 +1,7 @@
 package hennovo_backend.plantillacarga.entitys;
 
+import java.time.LocalDate;
+
 import hennovo_backend.productos.entity.Producto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,6 +26,9 @@ public class DetalleCelda {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
+    private LocalDate fecha;
 
     @Column(nullable = false)
     private Integer cantidad;
