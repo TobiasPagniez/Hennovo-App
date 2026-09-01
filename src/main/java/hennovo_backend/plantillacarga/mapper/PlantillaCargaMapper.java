@@ -1,5 +1,7 @@
 package hennovo_backend.plantillacarga.mapper;
 
+import java.time.LocalDate;
+
 import org.springframework.stereotype.Component;
 
 import hennovo_backend.plantillacarga.dtos.response.CeldaPlantillaResponse;
@@ -12,7 +14,7 @@ import hennovo_backend.plantillacarga.entitys.PlantillaCarga;
 @Component
 public class PlantillaCargaMapper {
 
-    public PlantillaCargaResponse toResponse(PlantillaCarga plantilla) {
+    public PlantillaCargaResponse toResponse(PlantillaCarga plantilla, LocalDate fecha) {
 
         return new PlantillaCargaResponse(
                 plantilla.getId(),
@@ -22,18 +24,19 @@ public class PlantillaCargaMapper {
                 plantilla.getNivel().name(),
                 plantilla.getVehiculo().getId(),
                 plantilla.getCeldas().stream()
-                        .map(this::toCeldaResponse)
+                        .map(celda -> toCeldaResponse(celda, fecha))
                         .toList()
         );
     }
 
-    private CeldaPlantillaResponse toCeldaResponse(CeldaPlantilla celda) {
+    private CeldaPlantillaResponse toCeldaResponse(CeldaPlantilla celda, LocalDate fecha) {
 
         return new CeldaPlantillaResponse(
                 celda.getId(),
                 celda.getFila(),
                 celda.getColumna(),
                 celda.getDetalles().stream()
+                        .filter(d -> d.getFecha().equals(fecha))
                         .map(this::toDetalleResponse)
                         .toList()
         );

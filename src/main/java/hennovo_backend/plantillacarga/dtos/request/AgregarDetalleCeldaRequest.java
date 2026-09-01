@@ -1,9 +1,14 @@
 package hennovo_backend.plantillacarga.dtos.request;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 public record AgregarDetalleCeldaRequest(
+
+        @NotNull(message = "La fecha es obligatoria")
+        LocalDate fecha,
 
         @NotNull(message = "El producto es obligatorio")
         Long productoId,
