@@ -90,6 +90,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/cheques/**")
                         .hasRole("ADMIN")
 
+                        .requestMatchers(
+                                "/api/control-horario",
+                                "/api/control-horario/resumen",
+                                "/api/control-horario/usuario/**")
+                        .hasRole("ADMIN")
+
                         .anyRequest()
                         .authenticated())
 
