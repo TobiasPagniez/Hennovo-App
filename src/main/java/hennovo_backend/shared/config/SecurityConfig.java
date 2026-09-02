@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 import hennovo_backend.shared.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -90,13 +91,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/cheques/**")
                         .hasRole("ADMIN")
 
-                        .requestMatchers(
-                                "/api/control-horario",
-                                "/api/control-horario/resumen",
-                                "/api/control-horario/usuario/**")
+                        .requestMatchers(HttpMethod.GET, "/api/control-horario")
                         .hasRole("ADMIN")
 
-                        .anyRequest()
+                        .requestMatchers("/api/control-horario/resumen")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/api/control-horario/usuario/**")
+                        .hasRole("ADMIN")                        .anyRequest()
                         .authenticated())
 
                 .addFilterBefore(
