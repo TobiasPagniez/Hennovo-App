@@ -18,4 +18,6 @@ public interface ClienteService {
     void desactivar(Long id);
 
     List<ClienteResponseDTO> buscarPorNombre(String nombre);
+
+    ClienteResponseDTO reactivar(Long id);
 }
