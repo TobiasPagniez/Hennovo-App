@@ -45,8 +45,7 @@ public class ClienteController {
     public ResponseEntity<List<ClienteResponseDTO>> buscarPorNombre(
             @RequestParam String nombre) {
 
-        List<ClienteResponseDTO> clientes =
-                clienteService.buscarPorNombre(nombre);
+        List<ClienteResponseDTO> clientes = clienteService.buscarPorNombre(nombre);
 
         return ResponseEntity.ok(clientes);
     }
@@ -74,7 +73,7 @@ public class ClienteController {
         List<ClienteResponseDTO> clientes = clienteService.obtenerTodos();
 
         return ResponseEntity.ok(clientes);
-    }    
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<ClienteResponseDTO> modificar(
@@ -93,5 +92,10 @@ public class ClienteController {
         clienteService.desactivar(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<ClienteResponseDTO> reactivar(@PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.reactivar(id));
     }
 }

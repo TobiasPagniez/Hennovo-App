@@ -27,9 +27,7 @@ public class ClienteServiceImpl implements ClienteService {
     public ClienteResponseDTO crear(ClienteRequestDTO dto) {
 
         CategoriaCliente categoria = categoriaClienteRepository.findById(dto.idCategoria())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Categoría no encontrada")
-                );
+                .orElseThrow(() -> new EntityNotFoundException("Categoría no encontrada"));
 
         Cliente cliente = clienteMapper.toEntity(dto);
 
@@ -45,9 +43,7 @@ public class ClienteServiceImpl implements ClienteService {
     public ClienteResponseDTO obtenerPorId(Long id) {
 
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Cliente no encontrado")
-                );
+                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
 
         return clienteMapper.toResponseDTO(cliente);
     }
@@ -65,14 +61,10 @@ public class ClienteServiceImpl implements ClienteService {
     public ClienteResponseDTO modificar(Long id, ClienteRequestDTO dto) {
 
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Cliente no encontrado")
-                );
+                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
 
         CategoriaCliente categoria = categoriaClienteRepository.findById(dto.idCategoria())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Categoría no encontrada")
-                );
+                .orElseThrow(() -> new EntityNotFoundException("Categoría no encontrada"));
 
         cliente.setNombre(dto.nombre());
         cliente.setDireccion(dto.direccion());
@@ -89,13 +81,24 @@ public class ClienteServiceImpl implements ClienteService {
     public void desactivar(Long id) {
 
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Cliente no encontrado")
-                );
+                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
 
         cliente.setActivo(false);
 
         clienteRepository.save(cliente);
+    }
+
+    @Override
+    public ClienteResponseDTO reactivar(Long id) {
+
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
+
+        cliente.setActivo(true);
+
+        Cliente clienteActualizado = clienteRepository.save(cliente);
+
+        return clienteMapper.toResponseDTO(clienteActualizado);
     }
 
     @Override
