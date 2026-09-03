@@ -19,6 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpMethod;
 
 import hennovo_backend.shared.security.JwtAuthenticationFilter;
+import hennovo_backend.shared.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -27,10 +28,10 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 
@@ -38,7 +39,6 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration)
             throws Exception {
-
         return configuration.getAuthenticationManager();
     }
 
@@ -98,12 +98,18 @@ public class SecurityConfig {
                         .hasRole("ADMIN")
 
                         .requestMatchers("/api/control-horario/usuario/**")
-                        .hasRole("ADMIN")                        .anyRequest()
+                        .hasRole("ADMIN")
+
+                        .anyRequest()
                         .authenticated())
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                        UsernamePasswordAuthenticationFilter.class)
+
+                .addFilterBefore(
+                        rateLimitFilter,
+                        JwtAuthenticationFilter.class);
 
         return http.build();
     }
