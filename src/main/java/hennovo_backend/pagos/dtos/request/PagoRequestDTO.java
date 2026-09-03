@@ -3,6 +3,7 @@ package hennovo_backend.pagos.dtos.request;
 import java.math.BigDecimal;
 
 import hennovo_backend.pagos.entitys.MedioPago;
+import hennovo_backend.shared.validation.NoHtml;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -19,9 +20,11 @@ public record PagoRequestDTO(
         @NotNull(message = "El medio de pago es obligatorio")
         MedioPago medioPago,
 
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
         @Size(max = 100, message = "El número de comprobante no puede superar los 100 caracteres")
         String numeroComprobante,
 
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
         @Size(max = 500, message = "Las observaciones no pueden superar los 500 caracteres")
         String observaciones
 

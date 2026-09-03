@@ -3,6 +3,7 @@ package hennovo_backend.cheques.dtos.request;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import hennovo_backend.shared.validation.NoHtml;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,12 +17,15 @@ public record ChequeRequest(
         Long clienteId,
 
         @NotBlank(message = "El titular es obligatorio")
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
         String titular,
 
         @NotBlank(message = "El código de banco es obligatorio")
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
         String codigoBanco,
 
         @NotBlank(message = "El nombre del banco es obligatorio")
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
         String nombreBanco,
 
         @NotNull(message = "El importe es obligatorio")
