@@ -2,6 +2,7 @@ package hennovo_backend.perdidas.dtos.request;
 
 import java.time.LocalDate;
 
+import hennovo_backend.shared.validation.NoHtml;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,8 +20,10 @@ public record PerdidaRequest(
         Integer cantidad,
 
         @NotBlank(message = "El motivo es obligatorio")
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
         String motivo,
 
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
         String observaciones
 
 ) {}
