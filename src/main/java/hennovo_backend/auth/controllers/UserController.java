@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-
+import hennovo_backend.auth.dtos.request.ChangePasswordRequest;
 import hennovo_backend.auth.dtos.request.CreateUserRequest;
 import hennovo_backend.auth.dtos.request.UpdateUserRequest;
 import hennovo_backend.auth.dtos.response.UserResponse;
 import hennovo_backend.auth.services.interfaces.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -42,24 +42,21 @@ public class UserController {
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                userService.getUserById(id)
-        );
+                userService.getUserById(id));
     }
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
 
         return ResponseEntity.ok(
-                userService.getAllUsers()
-        );
+                userService.getAllUsers());
     }
 
     @GetMapping("/empleados")
     public ResponseEntity<List<UserResponse>> getEmpleados() {
 
         return ResponseEntity.ok(
-                userService.getEmpleadosActivos()
-        );
+                userService.getEmpleadosActivos());
     }
 
     @PutMapping("/{id}")
@@ -68,8 +65,7 @@ public class UserController {
             @Valid @RequestBody UpdateUserRequest request) {
 
         return ResponseEntity.ok(
-                userService.updateUser(id, request)
-        );
+                userService.updateUser(id, request));
     }
 
     @PatchMapping("/{id}/deactivate")
@@ -77,6 +73,15 @@ public class UserController {
             @PathVariable Long id) {
 
         userService.deactivateUser(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        userService.changePassword(request);
 
         return ResponseEntity.noContent().build();
     }
