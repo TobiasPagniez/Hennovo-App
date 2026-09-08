@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpMethod;
 
+import hennovo_backend.shared.logging.LogHubLoggingFilter;
 import hennovo_backend.shared.security.JwtAuthenticationFilter;
 import hennovo_backend.shared.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
+    private final LogHubLoggingFilter logHubLoggingFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -110,8 +112,8 @@ public class SecurityConfig {
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class)
 
-                .addFilterBefore(
-                        rateLimitFilter,
+                .addFilterAfter(
+                        logHubLoggingFilter,
                         JwtAuthenticationFilter.class);
 
         return http.build();

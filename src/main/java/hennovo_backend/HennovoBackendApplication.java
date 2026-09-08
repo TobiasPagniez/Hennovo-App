@@ -21,6 +21,9 @@ public class HennovoBackendApplication {
         setPropertyFromDotenvIfAbsent(dotenv, "DB_URL");
         setPropertyFromDotenvIfAbsent(dotenv, "DB_USERNAME");
         setPropertyFromDotenvIfAbsent(dotenv, "DB_PASSWORD");
+        setPropertyFromDotenvIfAbsent(dotenv, "LOGHUB_URL");
+        setPropertyFromDotenvIfAbsent(dotenv, "LOGHUB_API_KEY");
+        setPropertyFromDotenvIfAbsent(dotenv, "LOGHUB_APP_ID");
 
         SpringApplication.run(
                 HennovoBackendApplication.class,
