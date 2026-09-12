@@ -17,6 +17,7 @@ import hennovo_backend.precios.repositorys.ListaPrecioRepository;
 import hennovo_backend.precios.repositorys.PrecioProductoRepository;
 import hennovo_backend.productos.entity.Producto;
 import hennovo_backend.productos.repository.ProductoRepository;
+import hennovo_backend.productos.util.UnidadesPermitidas;
 import hennovo_backend.remitos.dtos.request.DetalleRemitoRequest;
 import hennovo_backend.remitos.dtos.request.RemitoRequest;
 import hennovo_backend.remitos.dtos.response.DetalleRemitoResponse;
@@ -130,6 +131,7 @@ public class RemitoServiceImpl implements RemitoService {
                                         .orElseThrow(() -> new NotFoundException(
                                                         "Producto no encontrado: "
                                                                         + detalleRequest.productoId()));
+                       UnidadesPermitidas.validar(producto, detalleRequest.unidad()); 
 
                         PrecioProducto precioProducto = precioProductoRepository
                                         .findByProductoIdAndCategoriaIdAndListaId(
