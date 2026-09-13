@@ -23,7 +23,6 @@ import hennovo_backend.precios.repositorys.PrecioProductoRepository;
 import hennovo_backend.precios.services.interfaces.ListaPrecioService;
 import hennovo_backend.productos.entity.Producto;
 import hennovo_backend.productos.repository.ProductoRepository;
-import hennovo_backend.productos.util.UnidadesPermitidas;
 import hennovo_backend.shared.exception.BadRequestException;
 import hennovo_backend.shared.exception.ConflictException;
 import hennovo_backend.shared.exception.NotFoundException;
@@ -64,12 +63,8 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
             CategoriaCliente categoria = categoriaClienteRepository.findById(precioRequest.categoriaId())
                     .orElseThrow(() -> new NotFoundException("Categoría de cliente no encontrada"));
 
-            UnidadesPermitidas.validar(producto, precioRequest.unidadPrecio());
-
-
             PrecioProducto precioProducto = new PrecioProducto();
             precioProducto.setPrecio(precioRequest.precio());
-            precioProducto.setUnidadPrecio(precioRequest.unidadPrecio());
             precioProducto.setProducto(producto);
             precioProducto.setCategoria(categoria);
             precioProducto.setLista(listaPrecio);

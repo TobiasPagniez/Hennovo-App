@@ -33,31 +33,29 @@ public class RemitoMapper {
         return remito;
     }
 
-    public DetalleRemito toDetalleEntity(
+public DetalleRemito toDetalleEntity(
             DetalleRemitoRequest request,
             Producto producto) {
 
         DetalleRemito detalle = new DetalleRemito();
 
         detalle.setCantidad(request.cantidad());
-        detalle.setUnidad(request.unidad());
         detalle.setProducto(producto);
 
         return detalle;
     }
 
-        public DetalleRemitoResponse toDetalleResponse(
-                DetalleRemito detalle) {
+    public DetalleRemitoResponse toDetalleResponse(
+            DetalleRemito detalle) {
 
         return new DetalleRemitoResponse(
                 detalle.getId(),
                 detalle.getProducto().getId(),
                 detalle.getCantidad(),
-                detalle.getUnidad(),
                 detalle.getPrecioUnitario(),
                 detalle.getImporte()
         );
-        }
+    }
 
     public RemitoResponse toResponse(
             Remito remito,

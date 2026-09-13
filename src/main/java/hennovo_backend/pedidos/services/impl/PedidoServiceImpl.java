@@ -1,7 +1,6 @@
 package hennovo_backend.pedidos.services.impl;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +28,10 @@ import hennovo_backend.pedidos.repositorys.PedidoRepository;
 import hennovo_backend.pedidos.services.interfaces.PedidoService;
 import hennovo_backend.precios.entitys.ListaPrecio;
 import hennovo_backend.precios.entitys.PrecioProducto;
-import hennovo_backend.precios.entitys.UnidadPrecio;
 import hennovo_backend.precios.repositorys.ListaPrecioRepository;
 import hennovo_backend.precios.repositorys.PrecioProductoRepository;
 import hennovo_backend.productos.entity.Producto;
 import hennovo_backend.productos.repository.ProductoRepository;
-import hennovo_backend.productos.util.UnidadesPermitidas;
 import hennovo_backend.shared.exception.BadRequestException;
 import hennovo_backend.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -54,9 +51,6 @@ public class PedidoServiceImpl implements PedidoService {
 
     private final PedidoMapper pedidoMapper;
     private final DetallePedidoMapper detallePedidoMapper;
-
-    // constante de conversion
-    private static final int MAPLES_POR_CAJON = 12;
 
     @Override
     public PedidoResponse crear(PedidoRequest request) {
@@ -231,41 +225,6 @@ public class PedidoServiceImpl implements PedidoService {
         return construirResponse(pedido);
     }
 
-    private BigDecimal obtenerPrecioUnitario(
-            PrecioProducto precioProducto,
-            UnidadPrecio unidadSolicitada) {
-
-        UnidadPrecio unidadPrecio = precioProducto.getUnidadPrecio();
-
-        if (unidadSolicitada == unidadPrecio) {
-            return precioProducto.getPrecio();
-        }
-
-        if (unidadPrecio == UnidadPrecio.CAJON
-                && unidadSolicitada == UnidadPrecio.MAPLE) {
-
-            return precioProducto.getPrecio()
-                    .divide(
-                            BigDecimal.valueOf(MAPLES_POR_CAJON),
-                            2,
-                            RoundingMode.HALF_UP);
-        }
-
-        if (unidadPrecio == UnidadPrecio.MAPLE
-                && unidadSolicitada == UnidadPrecio.CAJON) {
-
-            return precioProducto.getPrecio()
-                    .multiply(
-                            BigDecimal.valueOf(MAPLES_POR_CAJON));
-        }
-
-        throw new BadRequestException(
-                "No existe una conversión entre "
-                        + unidadPrecio
-                        + " y "
-                        + unidadSolicitada);
-    }
-
     private BigDecimal crearDetalles(
             Pedido pedido,
             List<DetallePedidoRequest> detallesRequest,
@@ -282,16 +241,12 @@ public class PedidoServiceImpl implements PedidoService {
                             "Producto no encontrado: "
                                     + detalleRequest.productoId()));
 
-            UnidadesPermitidas.validar(producto, detalleRequest.unidad());
-
             PrecioProducto precioProducto = obtenerPrecio(
                     producto,
                     cliente,
                     listaVigente);
 
-            BigDecimal precioUnitario = obtenerPrecioUnitario(
-                    precioProducto,
-                    detalleRequest.unidad());
+            BigDecimal precioUnitario = precioProducto.getPrecio();
 
             DetallePedido detalle = detallePedidoMapper.toEntity(
                     detalleRequest,
