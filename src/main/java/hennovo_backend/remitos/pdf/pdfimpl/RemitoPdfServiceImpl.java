@@ -636,6 +636,7 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
 
         String presentacion = switch (producto.getPresentacion()) {
             case MAPLE -> "";
+            case CAJON -> "Cajón";
             case CAJITA -> "Cajita";
         };
 

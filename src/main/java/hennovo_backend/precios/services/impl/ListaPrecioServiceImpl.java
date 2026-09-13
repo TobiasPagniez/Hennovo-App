@@ -64,12 +64,8 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
             CategoriaCliente categoria = categoriaClienteRepository.findById(precioRequest.categoriaId())
                     .orElseThrow(() -> new NotFoundException("Categoría de cliente no encontrada"));
 
-            UnidadesPermitidas.validar(producto, precioRequest.unidadPrecio());
-
-
             PrecioProducto precioProducto = new PrecioProducto();
             precioProducto.setPrecio(precioRequest.precio());
-            precioProducto.setUnidadPrecio(precioRequest.unidadPrecio());
             precioProducto.setProducto(producto);
             precioProducto.setCategoria(categoria);
             precioProducto.setLista(listaPrecio);

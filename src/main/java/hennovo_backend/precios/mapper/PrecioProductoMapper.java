@@ -12,8 +12,7 @@ public class PrecioProductoMapper {
                 precioProducto.getId(),
                 precioProducto.getProducto().getId(),
                 precioProducto.getCategoria().getId(),
-                precioProducto.getPrecio(),
-                precioProducto.getUnidadPrecio()
+                precioProducto.getPrecio()
         );
     }
 }

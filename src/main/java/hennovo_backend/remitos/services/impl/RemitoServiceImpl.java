@@ -1,7 +1,6 @@
 package hennovo_backend.remitos.services.impl;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -12,12 +11,10 @@ import hennovo_backend.pedidos.entitys.Pedido;
 import hennovo_backend.pedidos.repositorys.PedidoRepository;
 import hennovo_backend.precios.entitys.ListaPrecio;
 import hennovo_backend.precios.entitys.PrecioProducto;
-import hennovo_backend.precios.entitys.UnidadPrecio;
 import hennovo_backend.precios.repositorys.ListaPrecioRepository;
 import hennovo_backend.precios.repositorys.PrecioProductoRepository;
 import hennovo_backend.productos.entity.Producto;
 import hennovo_backend.productos.repository.ProductoRepository;
-import hennovo_backend.productos.util.UnidadesPermitidas;
 import hennovo_backend.remitos.dtos.request.DetalleRemitoRequest;
 import hennovo_backend.remitos.dtos.request.RemitoRequest;
 import hennovo_backend.remitos.dtos.response.DetalleRemitoResponse;
@@ -47,8 +44,6 @@ public class RemitoServiceImpl implements RemitoService {
 
         private final RemitoMapper remitoMapper;
 
-        private static final int MAPLES_POR_CAJON = 12;
-
         @Override
         public RemitoResponse crear(RemitoRequest request) {
 
@@ -60,12 +55,6 @@ public class RemitoServiceImpl implements RemitoService {
                         throw new ConflictException(
                                         "El pedido ya tiene un remito");
                 }
-
-                // El pedido debe estar entregado /*revisar este condicional*/
-                // if (!pedido.getEntregado()) {
-                // throw new BadRequestException(
-                // "No se puede generar un remito para un pedido que no fue entregado");
-                // }
 
                 ListaPrecio listaVigente = listaPrecioRepository.findByFechaHastaIsNull()
                                 .orElseThrow(() -> new NotFoundException(
@@ -131,13 +120,12 @@ public class RemitoServiceImpl implements RemitoService {
                                         .orElseThrow(() -> new NotFoundException(
                                                         "Producto no encontrado: "
                                                                         + detalleRequest.productoId()));
-                       UnidadesPermitidas.validar(producto, detalleRequest.unidad()); 
 
                         PrecioProducto precioProducto = precioProductoRepository
                                         .findByProductoIdAndCategoriaIdAndListaId(
-                                                        producto.getId(),
-                                                        cliente.getCategoria().getId(),
-                                                        listaVigente.getId())
+                                            producto.getId(),
+                                            cliente.getCategoria().getId(),
+                                            listaVigente.getId())
                                         .orElseThrow(() -> new NotFoundException(
                                                         "No existe un precio para el producto "
                                                                         + producto.getId()
@@ -145,9 +133,7 @@ public class RemitoServiceImpl implements RemitoService {
                                                                         + cliente.getCategoria().getId()
                                                                         + " dentro de la lista vigente"));
 
-                        BigDecimal precioUnitario = obtenerPrecioUnitario(
-                                        precioProducto,
-                                        detalleRequest.unidad());
+                        BigDecimal precioUnitario = precioProducto.getPrecio();
 
                         DetalleRemito detalle = remitoMapper.toDetalleEntity(
                                         detalleRequest,
@@ -158,47 +144,12 @@ public class RemitoServiceImpl implements RemitoService {
 
                         BigDecimal importe = precioUnitario.multiply(
                                         BigDecimal.valueOf(
-                                                        detalleRequest.cantidad()));
+                                            detalleRequest.cantidad()));
 
                         detalle.setImporte(importe);
 
                         detalleRemitoRepository.save(detalle);
                 }
-        }
-
-        private BigDecimal obtenerPrecioUnitario(
-                        PrecioProducto precioProducto,
-                        UnidadPrecio unidadSolicitada) {
-
-                UnidadPrecio unidadPrecio = precioProducto.getUnidadPrecio();
-
-                if (unidadSolicitada == unidadPrecio) {
-                        return precioProducto.getPrecio();
-                }
-
-                if (unidadPrecio == UnidadPrecio.CAJON
-                                && unidadSolicitada == UnidadPrecio.MAPLE) {
-
-                        return precioProducto.getPrecio()
-                                        .divide(
-                                                        BigDecimal.valueOf(MAPLES_POR_CAJON),
-                                                        2,
-                                                        RoundingMode.HALF_UP);
-                }
-
-                if (unidadPrecio == UnidadPrecio.MAPLE
-                                && unidadSolicitada == UnidadPrecio.CAJON) {
-
-                        return precioProducto.getPrecio()
-                                        .multiply(
-                                                        BigDecimal.valueOf(MAPLES_POR_CAJON));
-                }
-
-                throw new IllegalArgumentException(
-                                "No existe una conversión entre "
-                                                + unidadPrecio
-                                                + " y "
-                                                + unidadSolicitada);
         }
 
         private RemitoResponse construirResponse(Remito remito) {

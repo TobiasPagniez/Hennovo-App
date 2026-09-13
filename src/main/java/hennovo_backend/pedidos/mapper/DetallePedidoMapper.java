@@ -20,7 +20,6 @@ public class DetallePedidoMapper {
 
         detalle.setProducto(producto);
         detalle.setCantidad(request.cantidad());
-        detalle.setUnidad(request.unidad());
 
         return detalle;
     }
@@ -36,7 +35,6 @@ public class DetallePedidoMapper {
                 detalle.getId(),
                 detalle.getProducto().getId(),
                 detalle.getCantidad(),
-                detalle.getUnidad(),
                 detalle.getPrecioUnitario(),
                 subtotal
         );

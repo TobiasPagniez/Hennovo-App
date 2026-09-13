@@ -2,7 +2,6 @@ package hennovo_backend.pedidos.entitys;
 
 import java.math.BigDecimal;
 
-import hennovo_backend.precios.entitys.UnidadPrecio;
 import hennovo_backend.productos.entity.Producto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -34,10 +33,6 @@ public class DetallePedido {
 
     @Column(nullable = false)
     private Integer cantidad;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UnidadPrecio unidad; //cajon -> 12 maples
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal precioUnitario;
