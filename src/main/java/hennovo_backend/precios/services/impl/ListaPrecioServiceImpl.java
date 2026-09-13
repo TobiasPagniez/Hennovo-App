@@ -23,7 +23,6 @@ import hennovo_backend.precios.repositorys.PrecioProductoRepository;
 import hennovo_backend.precios.services.interfaces.ListaPrecioService;
 import hennovo_backend.productos.entity.Producto;
 import hennovo_backend.productos.repository.ProductoRepository;
-import hennovo_backend.productos.util.UnidadesPermitidas;
 import hennovo_backend.shared.exception.BadRequestException;
 import hennovo_backend.shared.exception.ConflictException;
 import hennovo_backend.shared.exception.NotFoundException;
