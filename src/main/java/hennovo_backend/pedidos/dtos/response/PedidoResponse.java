@@ -24,6 +24,8 @@ public record PedidoResponse(
 
                 Long usuarioId,
 
+                String usuarioNombre,
+
                 Long rutaId,
 
                 Integer ordenRuta,

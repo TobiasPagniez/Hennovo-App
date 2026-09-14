@@ -105,6 +105,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/control-horario/usuario/**")
                         .hasRole("ADMIN")
 
+                        .requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/asignar")
+                        .hasRole("ADMIN")
+
                         .anyRequest()
                         .authenticated())
 

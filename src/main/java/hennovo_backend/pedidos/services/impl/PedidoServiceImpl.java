@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import hennovo_backend.auth.entitys.NombreRol;
 import hennovo_backend.auth.entitys.Usuario;
 import hennovo_backend.auth.repositorys.UsuarioRepository;
 import hennovo_backend.clientes.entitys.Cliente;
@@ -75,20 +76,36 @@ public class PedidoServiceImpl implements PedidoService {
     }
 
     private Usuario obtenerUsuarioParaPedido(Long usuarioIdSolicitado) {
-
         if (usuarioIdSolicitado != null) {
             return usuarioRepository.findById(usuarioIdSolicitado)
-                    .orElseThrow(() -> new NotFoundException(
-                            "El usuario indicado para el pedido no existe"));
+                    .orElseThrow(() -> new NotFoundException("El usuario indicado para el pedido no existe"));
         }
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+        Usuario usuarioAutenticado = usuarioRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new NotFoundException("Usuario autenticado no encontrado"));
 
-        return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException(
-                        "Usuario autenticado no encontrado"));
+        // El admin puede crear pedidos sin asignar; el empleado siempre se autoasigna
+        if (usuarioAutenticado.getRol().getNombre() == NombreRol.ADMIN) {
+            return null;
+        }
+        return usuarioAutenticado;
     }
+
+    @Override
+    public PedidoResponse asignarUsuario(Long id, Long usuarioId) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Pedido no encontrado"));
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        if (!usuario.getActivo()) {
+            throw new BadRequestException("El usuario está inactivo");
+        }
+        pedido.setUsuario(usuario);
+        pedidoRepository.save(pedido);
+        return construirResponse(pedido);
+    }
+
     private ListaPrecio obtenerListaVigente() {
 
         return listaPrecioRepository.findByFechaHastaIsNull()
@@ -123,13 +140,12 @@ public class PedidoServiceImpl implements PedidoService {
 
         return construirResponse(pedido);
     }
-    
+
     private PedidoResponse construirResponse(Pedido pedido) {
 
-    List<DetallePedido> detalles =
-            detallePedidoRepository.findByPedidoId(pedido.getId());
+        List<DetallePedido> detalles = detallePedidoRepository.findByPedidoId(pedido.getId());
 
-    return construirResponse(pedido, detalles);
+        return construirResponse(pedido, detalles);
     }
 
     @Override
