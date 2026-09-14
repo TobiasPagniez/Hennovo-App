@@ -21,4 +21,6 @@ public interface PedidoService {
     void marcarComoEntregado(Long id);
 
     void marcarComoPagado(Long id);
+
+    PedidoResponse asignarUsuario(Long id, Long usuarioId);
 }

@@ -24,8 +24,7 @@ public class PedidoMapper {
     public Pedido toEntity(
             PedidoRequest request,
             Cliente cliente,
-            Usuario usuario
-    ) {
+            Usuario usuario) {
         Pedido pedido = new Pedido();
 
         pedido.setFecha(request.fecha());
@@ -42,8 +41,9 @@ public class PedidoMapper {
     public PedidoResponse toResponse(
             Pedido pedido,
             List<DetallePedidoResponse> detalles,
-            BigDecimal total
-    ) {
+            BigDecimal total) {
+        Usuario usuario = pedido.getUsuario();
+
         return new PedidoResponse(
                 pedido.getId(),
                 pedido.getFecha(),
@@ -53,11 +53,9 @@ public class PedidoMapper {
                 pedido.getBanco(),
                 pedido.getCliente().getId(),
                 pedido.getCliente().getNombre(),
-                pedido.getUsuario().getId(),
+                usuario != null ? usuario.getId() : null,
+                usuario != null ? usuario.getNombre() + " " + usuario.getApellido() : null,
                 pedido.getRuta() != null ? pedido.getRuta().getId() : null,
-                pedido.getOrdenRuta(),
-                detalles,
-                total
-        );
+                pedido.getOrdenRuta(), detalles, total);
     }
 }

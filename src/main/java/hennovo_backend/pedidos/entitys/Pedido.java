@@ -50,8 +50,8 @@ public class Pedido {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "usuario_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -59,5 +59,5 @@ public class Pedido {
     private Ruta ruta;
 
     @Column
-    private Integer ordenRuta;    
+    private Integer ordenRuta;
 }
