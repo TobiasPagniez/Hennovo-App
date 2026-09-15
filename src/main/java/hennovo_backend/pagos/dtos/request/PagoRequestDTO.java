@@ -1,6 +1,7 @@
 package hennovo_backend.pagos.dtos.request;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import hennovo_backend.pagos.entitys.MedioPago;
 import hennovo_backend.shared.validation.NoHtml;
@@ -26,7 +27,23 @@ public record PagoRequestDTO(
 
         @NoHtml(message = "No se permiten etiquetas HTML en este campo")
         @Size(max = 500, message = "Las observaciones no pueden superar los 500 caracteres")
-        String observaciones
+        String observaciones,
+
+        // Datos del cheque la validacion not null va dentro del service
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
+        String titular,
+
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
+        String codigoBanco,
+
+        @NoHtml(message = "No se permiten etiquetas HTML en este campo")
+        String nombreBanco,
+
+        LocalDate fechaPago,
+
+        Boolean endosado,
+
+        Boolean firmaTitular
 
 ) {
 }
