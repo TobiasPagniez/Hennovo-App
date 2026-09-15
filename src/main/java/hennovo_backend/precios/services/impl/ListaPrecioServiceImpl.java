@@ -46,16 +46,14 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
         cerrarListaVigente(request.fechaDesde());
 
         ListaPrecio listaPrecio = listaPrecioRepository.save(
-                listaPrecioMapper.toEntity(request)
-        );
+                listaPrecioMapper.toEntity(request));
 
         Set<String> preciosCreados = new HashSet<>();
         for (PrecioProductoRequest precioRequest : request.precios()) {
             String clavePrecio = precioRequest.productoId() + ":" + precioRequest.categoriaId();
             if (!preciosCreados.add(clavePrecio)) {
                 throw new ConflictException(
-                        "No puede haber dos precios para el mismo producto y categoría"
-                );
+                        "No puede haber dos precios para el mismo producto y categoría");
             }
 
             Producto producto = productoRepository.findById(precioRequest.productoId())
@@ -74,11 +72,53 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
         return obtenerPorId(listaPrecio.getId());
     }
 
+    @Override
+    @Transactional
+    public ListaPrecioResponse actualizar(Long id, ListaPrecioRequest request) {
+
+        ListaPrecio listaPrecio = listaPrecioRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Lista de precios no encontrada"));
+
+        validarFechas(request);
+
+        Set<String> preciosActualizados = new HashSet<>();
+
+        for (PrecioProductoRequest precioRequest : request.precios()) {
+
+            String clavePrecio = precioRequest.productoId() + ":" + precioRequest.categoriaId();
+
+            if (!preciosActualizados.add(clavePrecio)) {
+                throw new ConflictException(
+                        "No puede haber dos precios para el mismo producto y categoría");
+            }
+
+            Producto producto = productoRepository.findById(precioRequest.productoId())
+                    .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
+
+            CategoriaCliente categoria = categoriaClienteRepository.findById(precioRequest.categoriaId())
+                    .orElseThrow(() -> new NotFoundException(
+                            "Categoría de cliente no encontrada"));
+
+            PrecioProducto precioProducto = precioProductoRepository
+                    .findByProductoIdAndCategoriaIdAndListaId(
+                            producto.getId(),
+                            categoria.getId(),
+                            listaPrecio.getId())
+                    .orElseThrow(() -> new NotFoundException(
+                            "No existe un precio para el producto y categoría indicados"));
+
+            precioProducto.setPrecio(precioRequest.precio());
+
+            precioProductoRepository.save(precioProducto);
+        }
+
+        return obtenerPorId(listaPrecio.getId());
+    }
+
     private void validarFechas(ListaPrecioRequest request) {
         if (request.fechaHasta() != null && request.fechaHasta().isBefore(request.fechaDesde())) {
             throw new BadRequestException(
-                    "La fecha hasta no puede ser anterior a la fecha desde"
-            );
+                    "La fecha hasta no puede ser anterior a la fecha desde");
         }
     }
 
@@ -87,8 +127,7 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
             LocalDate nuevaFechaHasta = fechaDesdeNuevaLista.minusDays(1);
             if (nuevaFechaHasta.isBefore(anterior.getFechaDesde())) {
                 throw new ConflictException(
-                        "La nueva lista de precios debe comenzar después de la lista vigente"
-                );
+                        "La nueva lista de precios debe comenzar después de la lista vigente");
             }
             anterior.setFechaHasta(nuevaFechaHasta);
         });
@@ -109,8 +148,7 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
         return listaPrecioRepository.findAll().stream()
                 .map(listaPrecio -> listaPrecioMapper.toResponse(
                         listaPrecio,
-                        obtenerPrecios(listaPrecio.getId())
-                ))
+                        obtenerPrecios(listaPrecio.getId())))
                 .toList();
     }
 
@@ -127,6 +165,6 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
                 .orElseThrow(() -> new NotFoundException("No existe una lista de precios vigente"));
 
         return listaPrecioMapper.toResponse(listaPrecio, obtenerPrecios(listaPrecio.getId()));
-    }    
+    }
 
 }

@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -19,6 +23,7 @@ import hennovo_backend.clientes.repositorys.ClienteRepository;
 import hennovo_backend.pedidos.dtos.request.DetallePedidoRequest;
 import hennovo_backend.pedidos.dtos.request.PedidoRequest;
 import hennovo_backend.pedidos.dtos.response.DetallePedidoResponse;
+import hennovo_backend.pedidos.dtos.response.PaginaResponse;
 import hennovo_backend.pedidos.dtos.response.PedidoResponse;
 import hennovo_backend.pedidos.entitys.DetallePedido;
 import hennovo_backend.pedidos.entitys.Pedido;
@@ -160,6 +165,72 @@ public class PedidoServiceImpl implements PedidoService {
     public List<PedidoResponse> listarPorFecha(LocalDate fecha) {
 
         return construirListaResponse(pedidoRepository.findByFecha(fecha));
+    }
+
+    @Override
+    public PaginaResponse<PedidoResponse> listarPaginado(
+            LocalDate fecha,
+            String buscar,
+            int pagina,
+            int tamano) {
+
+        if (pagina < 0) {
+            pagina = 0;
+        }
+
+        if (tamano < 1) {
+            tamano = 10;
+        }
+
+        if (tamano > 50) {
+            tamano = 50;
+        }
+
+        Pageable pageable = PageRequest.of(
+                pagina,
+                tamano,
+                Sort.by(
+                        Sort.Order.desc("fecha"),
+                        Sort.Order.desc("id")));
+
+        String busqueda = buscar == null
+                ? ""
+                : buscar.trim();
+
+        Page<Pedido> paginaPedidos;
+
+        if (busqueda.isEmpty()) {
+
+            if (fecha != null) {
+                paginaPedidos = pedidoRepository.findByFecha(fecha, pageable);
+            } else {
+                paginaPedidos = pedidoRepository.findAll(pageable);
+            }
+
+        } else {
+
+            if (fecha != null) {
+                paginaPedidos = pedidoRepository
+                        .findByFechaAndClienteNombreContainingIgnoreCase(
+                                fecha,
+                                busqueda,
+                                pageable);
+            } else {
+                paginaPedidos = pedidoRepository
+                        .findByClienteNombreContainingIgnoreCase(
+                                busqueda,
+                                pageable);
+            }
+        }
+
+        List<PedidoResponse> contenido = construirListaResponse(paginaPedidos.getContent());
+
+        return new PaginaResponse<>(
+                contenido,
+                paginaPedidos.getNumber(),
+                paginaPedidos.getSize(),
+                paginaPedidos.getTotalElements(),
+                paginaPedidos.getTotalPages());
     }
 
     private List<PedidoResponse> construirListaResponse(List<Pedido> pedidos) {
