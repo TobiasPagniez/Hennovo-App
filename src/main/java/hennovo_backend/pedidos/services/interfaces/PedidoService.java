@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import hennovo_backend.pedidos.dtos.request.PedidoRequest;
+import hennovo_backend.pedidos.dtos.response.PaginaResponse;
 import hennovo_backend.pedidos.dtos.response.PedidoResponse;
 
 public interface PedidoService {
@@ -15,6 +16,12 @@ public interface PedidoService {
     List<PedidoResponse> listar();
 
     List<PedidoResponse> listarPorFecha(LocalDate fecha);
+
+    PaginaResponse<PedidoResponse> listarPaginado(
+            LocalDate fecha,
+            String buscar,
+            int pagina,
+            int tamano);
 
     PedidoResponse actualizar(Long id, PedidoRequest request);
 

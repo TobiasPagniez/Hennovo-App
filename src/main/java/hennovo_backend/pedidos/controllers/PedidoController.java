@@ -1,7 +1,6 @@
 package hennovo_backend.pedidos.controllers;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import hennovo_backend.pedidos.dtos.request.AsignarUsuarioPedidoRequest;
 import hennovo_backend.pedidos.dtos.request.PedidoRequest;
+import hennovo_backend.pedidos.dtos.response.PaginaResponse;
 import hennovo_backend.pedidos.dtos.response.PedidoResponse;
 import hennovo_backend.pedidos.services.interfaces.PedidoService;
 import jakarta.validation.Valid;
@@ -45,15 +45,18 @@ public class PedidoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PedidoResponse>> listar(
-            @RequestParam(required = false) LocalDate fecha) {
-        if (fecha != null) {
-            return ResponseEntity.ok(
-                    pedidoService.listarPorFecha(fecha));
-        }
+    public ResponseEntity<PaginaResponse<PedidoResponse>> listar(
+            @RequestParam(required = false) LocalDate fecha,
+            @RequestParam(required = false) String buscar,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(
-                pedidoService.listar());
+                pedidoService.listarPaginado(
+                        fecha,
+                        buscar,
+                        page,
+                        size));
     }
 
     @PutMapping("/{id}")
