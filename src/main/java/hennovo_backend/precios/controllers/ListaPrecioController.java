@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,18 +36,12 @@ public class ListaPrecioController {
 
     @GetMapping
     public ResponseEntity<List<ListaPrecioResponse>> listar() {
-
-        return ResponseEntity.ok(
-                listaPrecioService.listar()
-        );
+        return ResponseEntity.ok(listaPrecioService.listar());
     }
 
     @GetMapping("/vigente")
     public ResponseEntity<ListaPrecioResponse> obtenerVigente() {
-
-        return ResponseEntity.ok(
-                listaPrecioService.obtenerVigente()
-        );
+        return ResponseEntity.ok(listaPrecioService.obtenerVigente());
     }
 
     @GetMapping("/{id}")
@@ -55,6 +50,16 @@ public class ListaPrecioController {
 
         return ResponseEntity.ok(
                 listaPrecioService.obtenerPorId(id)
+        );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ListaPrecioResponse> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody ListaPrecioRequest request) {
+
+        return ResponseEntity.ok(
+                listaPrecioService.actualizar(id, request)
         );
     }
 }
