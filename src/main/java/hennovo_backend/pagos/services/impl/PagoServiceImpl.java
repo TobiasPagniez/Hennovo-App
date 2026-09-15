@@ -16,6 +16,10 @@ import hennovo_backend.pagos.repositorys.PagoRepository;
 import hennovo_backend.pagos.services.interfaces.PagoService;
 import hennovo_backend.shared.exception.BadRequestException;
 import jakarta.persistence.EntityNotFoundException;
+import hennovo_backend.cheques.entitys.Cheque;
+import hennovo_backend.cheques.mapper.ChequeMapper;
+import hennovo_backend.cheques.repositorys.ChequeRepository;
+import hennovo_backend.pagos.entitys.MedioPago;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,19 +31,21 @@ public class PagoServiceImpl implements PagoService {
     private final PagoRepository pagoRepository;
     private final ClienteRepository clienteRepository;
     private final PagoMapper pagoMapper;
+    private final ChequeRepository chequeRepository;
+    private final ChequeMapper chequeMapper;
 
     @Override
     public PagoResponseDTO crear(PagoRequestDTO dto) {
 
         Cliente cliente = clienteRepository.findById(dto.clienteId())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Cliente no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
 
         if (!cliente.getActivo()) {
             throw new BadRequestException(
                     "No se puede registrar un pago para un cliente inactivo");
         }
 
+        // Crear el pago
         Pago pago = pagoMapper.toEntity(dto);
 
         pago.setCliente(cliente);
@@ -48,7 +54,60 @@ public class PagoServiceImpl implements PagoService {
 
         Pago pagoGuardado = pagoRepository.save(pago);
 
+        if (dto.medioPago() == MedioPago.CHEQUE) {
+
+            validarDatosCheque(dto);
+            //esto va en el mapper
+            Cheque cheque = new Cheque();
+
+            cheque.setFechaIngreso(LocalDate.now());
+            cheque.setCliente(cliente);
+            cheque.setTitular(dto.titular());
+            cheque.setCodigoBanco(dto.codigoBanco());
+            cheque.setNombreBanco(dto.nombreBanco());
+            cheque.setImporte(dto.importe());
+            cheque.setFechaPago(dto.fechaPago());
+            cheque.setEndosado(dto.endosado());
+            cheque.setFirmaTitular(dto.firmaTitular());
+            cheque.setActivo(true);
+
+            chequeRepository.save(cheque);
+        }
+
         return pagoMapper.toResponseDTO(pagoGuardado);
+    }
+
+    private void validarDatosCheque(PagoRequestDTO dto) {
+
+        if (dto.titular() == null || dto.titular().isBlank()) {
+            throw new BadRequestException(
+                    "El titular es obligatorio para pagos con cheque");
+        }
+
+        if (dto.codigoBanco() == null || dto.codigoBanco().isBlank()) {
+            throw new BadRequestException(
+                    "El código de banco es obligatorio para pagos con cheque");
+        }
+
+        if (dto.nombreBanco() == null || dto.nombreBanco().isBlank()) {
+            throw new BadRequestException(
+                    "El nombre del banco es obligatorio para pagos con cheque");
+        }
+
+        if (dto.fechaPago() == null) {
+            throw new BadRequestException(
+                    "La fecha de pago es obligatoria para pagos con cheque");
+        }
+
+        if (dto.endosado() == null) {
+            throw new BadRequestException(
+                    "Debe indicar si el cheque está endosado");
+        }
+
+        if (dto.firmaTitular() == null) {
+            throw new BadRequestException(
+                    "Debe indicar si el cheque tiene firma del titular");
+        }
     }
 
     @Override
@@ -56,8 +115,7 @@ public class PagoServiceImpl implements PagoService {
     public PagoResponseDTO obtenerPorId(Long id) {
 
         Pago pago = pagoRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Pago no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado"));
 
         return pagoMapper.toResponseDTO(pago);
     }
@@ -92,8 +150,7 @@ public class PagoServiceImpl implements PagoService {
     public void anular(Long id) {
 
         Pago pago = pagoRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Pago no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado"));
 
         if (pago.getAnulado()) {
             throw new BadRequestException(
