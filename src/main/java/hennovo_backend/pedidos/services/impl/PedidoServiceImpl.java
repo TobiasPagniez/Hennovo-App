@@ -20,6 +20,7 @@ import hennovo_backend.auth.entitys.Usuario;
 import hennovo_backend.auth.repositorys.UsuarioRepository;
 import hennovo_backend.clientes.entitys.Cliente;
 import hennovo_backend.clientes.repositorys.ClienteRepository;
+import hennovo_backend.pagos.services.interfaces.CuentaCorrienteService;
 import hennovo_backend.pedidos.dtos.request.DetallePedidoRequest;
 import hennovo_backend.pedidos.dtos.request.PedidoRequest;
 import hennovo_backend.pedidos.dtos.response.DetallePedidoResponse;
@@ -54,6 +55,7 @@ public class PedidoServiceImpl implements PedidoService {
     private final PrecioProductoRepository precioProductoRepository;
     private final ListaPrecioRepository listaPrecioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final CuentaCorrienteService cuentaCorrienteService;
 
     private final PedidoMapper pedidoMapper;
     private final DetallePedidoMapper detallePedidoMapper;
@@ -76,6 +78,10 @@ public class PedidoServiceImpl implements PedidoService {
         pedido = pedidoRepository.save(pedido);
 
         crearDetalles(pedido, request.detalles(), cliente, listaVigente);
+
+        // Si el cliente tenía saldo a favor, este pedido nuevo puede
+        // quedar cubierto (total o parcialmente) de inmediato.
+        cuentaCorrienteService.sincronizarEstadoPedidos(cliente.getId());
 
         return construirResponse(pedido);
     }
@@ -289,10 +295,17 @@ public class PedidoServiceImpl implements PedidoService {
                     "No se puede modificar un pedido entregado");
         }
 
+        if (pedido.getPagado()) {
+            throw new BadRequestException(
+                    "No se puede modificar un pedido pagado");
+        }
+
         Cliente cliente = clienteRepository.findById(
                 request.clienteId()).orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
         ListaPrecio listaVigente = obtenerListaVigente();
+
+        Long clienteAnteriorId = pedido.getCliente().getId();
 
         pedido.setCliente(cliente);
         pedido.setFecha(request.fecha());
@@ -308,6 +321,11 @@ public class PedidoServiceImpl implements PedidoService {
                 request.detalles(),
                 cliente,
                 listaVigente);
+
+        if (!clienteAnteriorId.equals(cliente.getId())) {
+            cuentaCorrienteService.sincronizarEstadoPedidos(clienteAnteriorId);
+        }
+        cuentaCorrienteService.sincronizarEstadoPedidos(cliente.getId());
 
         return construirResponse(pedido);
     }
