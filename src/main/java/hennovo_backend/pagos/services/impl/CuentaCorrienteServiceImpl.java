@@ -24,7 +24,7 @@ import hennovo_backend.pedidos.entitys.DetallePedido;
 import hennovo_backend.pedidos.entitys.Pedido;
 import hennovo_backend.pedidos.repositorys.DetallePedidoRepository;
 import hennovo_backend.pedidos.repositorys.PedidoRepository;
-import jakarta.persistence.EntityNotFoundException;
+import hennovo_backend.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -41,7 +41,7 @@ public class CuentaCorrienteServiceImpl implements CuentaCorrienteService {
         public CuentaCorrienteResponseDTO obtenerPorCliente(Long clienteId) {
 
                 Cliente cliente = clienteRepository.findById(clienteId)
-                                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
+                                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
                 List<Pedido> pedidos = pedidoRepository.findByClienteIdOrderByFechaAscIdAsc(clienteId);
 

@@ -1,6 +1,5 @@
 package hennovo_backend.remitos.pdf.pdfimpl;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +24,7 @@ import hennovo_backend.remitos.entitys.Remito;
 import hennovo_backend.remitos.pdf.pdfinterface.RemitoPdfService;
 import hennovo_backend.remitos.repositorys.DetalleRemitoRepository;
 import hennovo_backend.remitos.repositorys.RemitoRepository;
+import hennovo_backend.shared.exception.NotFoundException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,7 +64,7 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
     public byte[] generarPdf(Long remitoId) {
 
         Remito remito = remitoRepository.findById(remitoId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new NotFoundException(
                         "Remito no encontrado"));
 
         List<DetalleRemito> detalles = detalleRemitoRepository.findByRemitoId(remitoId);

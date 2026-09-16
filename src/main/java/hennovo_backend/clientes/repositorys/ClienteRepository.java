@@ -9,4 +9,6 @@ import hennovo_backend.clientes.entitys.Cliente;
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
     List<Cliente> findByNombreContainingIgnoreCase(String nombre);
+
+    boolean existsByCategoriaIdAndActivoTrue(Long categoriaId);
 }

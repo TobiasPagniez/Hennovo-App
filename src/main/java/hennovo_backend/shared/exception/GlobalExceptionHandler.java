@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -75,6 +76,23 @@ public class GlobalExceptionHandler {
 
         problem.setTitle("Credenciales inválidas");
         problem.setDetail("Email o contraseña incorrectos.");
+
+        return problem;
+    }
+
+    /**
+     * Maneja el intento de login con usuario desactivado
+     */
+    @ExceptionHandler(DisabledException.class)
+    public ProblemDetail handleDisabledUser(
+            DisabledException ex) {
+
+        ProblemDetail problem =
+                ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+
+        problem.setTitle("Usuario desactivado");
+        problem.setDetail(
+                "Su cuenta se encuentra desactivada. Contacte al administrador.");
 
         return problem;
     }

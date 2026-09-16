@@ -12,7 +12,8 @@ import hennovo_backend.pedidoshabituales.repository.PedidoHabitualRepository;
 import hennovo_backend.pedidoshabituales.services.interfaces.PedidoHabitualService;
 import hennovo_backend.productos.entity.Producto;
 import hennovo_backend.productos.repository.ProductoRepository;
-import jakarta.persistence.EntityNotFoundException;
+import hennovo_backend.shared.exception.BadRequestException;
+import hennovo_backend.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -38,13 +39,13 @@ public class PedidoHabitualServiceImpl implements PedidoHabitualService {
         }
 
         Cliente cliente = clienteRepository.findById(dto.idCliente())
-                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
         Producto producto = productoRepository.findById(dto.idProducto())
-                .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
         if (!producto.getActivo()) {
-            throw new EntityNotFoundException("No se puede agregar un producto inactivo");
+            throw new BadRequestException("No se puede agregar un producto inactivo");
         }
 
         PedidoHabitual pedidoHabitual = new PedidoHabitual();
@@ -69,7 +70,7 @@ public class PedidoHabitualServiceImpl implements PedidoHabitualService {
     public List<PedidoHabitualResponseDTO> obtenerPorCliente(Long idCliente) {
 
         clienteRepository.findById(idCliente)
-                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
         return pedidoHabitualRepository.findByClienteId(idCliente)
                 .stream()
@@ -98,13 +99,13 @@ public class PedidoHabitualServiceImpl implements PedidoHabitualService {
         }
 
         Cliente cliente = clienteRepository.findById(dto.idCliente())
-                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
         Producto producto = productoRepository.findById(dto.idProducto())
-                .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
         if (!producto.getActivo()) {
-            throw new EntityNotFoundException("No se puede asociar un producto inactivo");
+            throw new BadRequestException("No se puede asociar un producto inactivo");
         }
 
         pedidoHabitual.setCliente(cliente);
