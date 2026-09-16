@@ -6,21 +6,21 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import hennovo_backend.cheques.entitys.Cheque;
+import hennovo_backend.cheques.mapper.ChequeMapper;
+import hennovo_backend.cheques.repositorys.ChequeRepository;
 import hennovo_backend.clientes.entitys.Cliente;
 import hennovo_backend.clientes.repositorys.ClienteRepository;
 import hennovo_backend.pagos.dtos.request.PagoRequestDTO;
 import hennovo_backend.pagos.dtos.response.PagoResponseDTO;
+import hennovo_backend.pagos.entitys.MedioPago;
 import hennovo_backend.pagos.entitys.Pago;
 import hennovo_backend.pagos.mapper.PagoMapper;
 import hennovo_backend.pagos.repositorys.PagoRepository;
+import hennovo_backend.pagos.services.interfaces.CuentaCorrienteService;
 import hennovo_backend.pagos.services.interfaces.PagoService;
 import hennovo_backend.shared.exception.BadRequestException;
 import hennovo_backend.shared.exception.NotFoundException;
-import hennovo_backend.cheques.entitys.Cheque;
-import hennovo_backend.cheques.mapper.ChequeMapper;
-import hennovo_backend.cheques.repositorys.ChequeRepository;
-import hennovo_backend.pagos.entitys.MedioPago;
-
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -33,6 +33,7 @@ public class PagoServiceImpl implements PagoService {
     private final PagoMapper pagoMapper;
     private final ChequeRepository chequeRepository;
     private final ChequeMapper chequeMapper;
+    private final CuentaCorrienteService cuentaCorrienteService;
 
     @Override
     public PagoResponseDTO crear(PagoRequestDTO dto) {
@@ -153,12 +154,14 @@ public class PagoServiceImpl implements PagoService {
                 .orElseThrow(() -> new NotFoundException("Pago no encontrado"));
 
         if (pago.getAnulado()) {
-            throw new BadRequestException(
-                    "El pago ya se encuentra anulado");
+            throw new BadRequestException("El pago ya se encuentra anulado");
         }
 
         pago.setAnulado(true);
-
         pagoRepository.save(pago);
+
+        // Sincroniza Pedido.pagado: pedidos que estaban PAGADO pueden volver
+        // a PARCIAL/PENDIENTE al anularse el pago que los cubría
+        cuentaCorrienteService.sincronizarEstadoPedidos(pago.getCliente().getId());
     }
 }
