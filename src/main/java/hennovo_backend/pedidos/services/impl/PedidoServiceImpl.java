@@ -328,6 +328,10 @@ public class PedidoServiceImpl implements PedidoService {
                             "Producto no encontrado: "
                                     + detalleRequest.productoId()));
 
+            if (!producto.getActivo()) {
+                throw new BadRequestException("No se puede agregar un producto inactivo");
+            }
+
             PrecioProducto precioProducto = obtenerPrecio(
                     producto,
                     cliente,

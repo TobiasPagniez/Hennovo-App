@@ -25,6 +25,7 @@ import hennovo_backend.remitos.mapper.RemitoMapper;
 import hennovo_backend.remitos.repositorys.DetalleRemitoRepository;
 import hennovo_backend.remitos.repositorys.RemitoRepository;
 import hennovo_backend.remitos.services.interfaces.RemitoService;
+import hennovo_backend.shared.exception.BadRequestException;
 import hennovo_backend.shared.exception.ConflictException;
 import hennovo_backend.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -120,6 +121,10 @@ public class RemitoServiceImpl implements RemitoService {
                                         .orElseThrow(() -> new NotFoundException(
                                                         "Producto no encontrado: "
                                                                         + detalleRequest.productoId()));
+
+                        if (!producto.getActivo()) {
+                                throw new BadRequestException("No se puede agregar un producto inactivo");
+                        }
 
                         PrecioProducto precioProducto = precioProductoRepository
                                         .findByProductoIdAndCategoriaIdAndListaId(
