@@ -25,6 +25,7 @@ import hennovo_backend.plantillacarga.repositorys.PlantillaCargaRepository;
 import hennovo_backend.plantillacarga.services.interfaces.PlantillaCargaService;
 import hennovo_backend.productos.entity.Producto;
 import hennovo_backend.productos.repository.ProductoRepository;
+import hennovo_backend.shared.exception.BadRequestException;
 import hennovo_backend.shared.exception.NotFoundException;
 import hennovo_backend.vehiculos.entitys.Vehiculo;
 import hennovo_backend.vehiculos.repositorys.VehiculoRepository;
@@ -97,8 +98,7 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
 
         PlantillaCarga plantilla = existente.get();
 
-        boolean cambioDeTamano =
-                !filas.equals(plantilla.getFilas()) || !columnas.equals(plantilla.getColumnas());
+        boolean cambioDeTamano = !filas.equals(plantilla.getFilas()) || !columnas.equals(plantilla.getColumnas());
 
         if (cambioDeTamano) {
             // Esto borra el contenido de TODAS las fechas cargadas para este
@@ -182,6 +182,11 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
     @Override
     @Transactional
     public void copiarDia(Long vehiculoId, CopiarCroquisRequest request) {
+
+        if (request.fechaOrigen().equals(request.fechaDestino())) {
+            throw new BadRequestException(
+                    "La fecha de origen y la fecha de destino no pueden ser iguales");
+        }
 
         Vehiculo vehiculo = obtenerVehiculo(vehiculoId);
 
