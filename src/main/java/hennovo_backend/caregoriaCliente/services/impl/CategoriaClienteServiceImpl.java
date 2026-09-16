@@ -8,10 +8,12 @@ import hennovo_backend.caregoriaCliente.dtos.request.CategoriaClienteRequestDTO;
 import hennovo_backend.caregoriaCliente.dtos.response.CategoriaClienteResponseDTO;
 import hennovo_backend.clientes.entitys.CategoriaCliente;
 import hennovo_backend.clientes.repositorys.CategoriaClienteRepository;
+import hennovo_backend.clientes.repositorys.ClienteRepository;
 import hennovo_backend.caregoriaCliente.mapper.CategoriaClienteMapper;
 
 import hennovo_backend.caregoriaCliente.services.interfaces.CategoriaClienteService;
-import jakarta.persistence.EntityNotFoundException;
+import hennovo_backend.shared.exception.ConflictException;
+import hennovo_backend.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -20,6 +22,7 @@ public class CategoriaClienteServiceImpl implements CategoriaClienteService {
 
     private final CategoriaClienteRepository categoriaClienteRepository;
     private final CategoriaClienteMapper categoriaClienteMapper;
+    private final ClienteRepository clienteRepository;
 
     @Override
     public CategoriaClienteResponseDTO crear(
@@ -39,7 +42,7 @@ public class CategoriaClienteServiceImpl implements CategoriaClienteService {
         CategoriaCliente categoria =
                 categoriaClienteRepository.findById(id)
                         .orElseThrow(() ->
-                                new EntityNotFoundException(
+                                new NotFoundException(
                                         "Categoría no encontrada"
                                 )
                         );
@@ -64,7 +67,7 @@ public class CategoriaClienteServiceImpl implements CategoriaClienteService {
         CategoriaCliente categoria =
                 categoriaClienteRepository.findById(id)
                         .orElseThrow(() ->
-                                new EntityNotFoundException(
+                                new NotFoundException(
                                         "Categoría no encontrada"
                                 )
                         );
@@ -85,10 +88,19 @@ public class CategoriaClienteServiceImpl implements CategoriaClienteService {
         CategoriaCliente categoria =
                 categoriaClienteRepository.findById(id)
                         .orElseThrow(() ->
-                                new EntityNotFoundException(
+                                new NotFoundException(
                                         "Categoría no encontrada"
                                 )
                         );
+
+        boolean tieneClientes = clienteRepository
+                .existsByCategoriaIdAndActivoTrue(id);
+
+        if (tieneClientes) {
+            throw new ConflictException(
+                    "No se puede eliminar la categoría porque tiene clientes activos asociados"
+            );
+        }
 
         categoriaClienteRepository.delete(categoria);
     }

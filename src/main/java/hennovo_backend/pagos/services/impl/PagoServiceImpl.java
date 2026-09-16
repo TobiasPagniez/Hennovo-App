@@ -15,7 +15,7 @@ import hennovo_backend.pagos.mapper.PagoMapper;
 import hennovo_backend.pagos.repositorys.PagoRepository;
 import hennovo_backend.pagos.services.interfaces.PagoService;
 import hennovo_backend.shared.exception.BadRequestException;
-import jakarta.persistence.EntityNotFoundException;
+import hennovo_backend.shared.exception.NotFoundException;
 import hennovo_backend.cheques.entitys.Cheque;
 import hennovo_backend.cheques.mapper.ChequeMapper;
 import hennovo_backend.cheques.repositorys.ChequeRepository;
@@ -38,7 +38,7 @@ public class PagoServiceImpl implements PagoService {
     public PagoResponseDTO crear(PagoRequestDTO dto) {
 
         Cliente cliente = clienteRepository.findById(dto.clienteId())
-                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Cliente no encontrado"));
 
         if (!cliente.getActivo()) {
             throw new BadRequestException(
@@ -115,7 +115,7 @@ public class PagoServiceImpl implements PagoService {
     public PagoResponseDTO obtenerPorId(Long id) {
 
         Pago pago = pagoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Pago no encontrado"));
 
         return pagoMapper.toResponseDTO(pago);
     }
@@ -135,7 +135,7 @@ public class PagoServiceImpl implements PagoService {
     public List<PagoResponseDTO> obtenerPorCliente(Long clienteId) {
 
         if (!clienteRepository.existsById(clienteId)) {
-            throw new EntityNotFoundException(
+            throw new NotFoundException(
                     "Cliente no encontrado");
         }
 
@@ -150,7 +150,7 @@ public class PagoServiceImpl implements PagoService {
     public void anular(Long id) {
 
         Pago pago = pagoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pago no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Pago no encontrado"));
 
         if (pago.getAnulado()) {
             throw new BadRequestException(
