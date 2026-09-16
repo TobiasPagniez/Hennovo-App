@@ -3,6 +3,7 @@ package hennovo_backend.planillaventas.services.impl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -14,12 +15,12 @@ import hennovo_backend.auth.entitys.Usuario;
 import hennovo_backend.auth.repositorys.UsuarioRepository;
 import hennovo_backend.clientes.entitys.Cliente;
 import hennovo_backend.clientes.repositorys.ClienteRepository;
-import hennovo_backend.pagos.dtos.response.CuentaCorrienteResponseDTO;
-import hennovo_backend.pagos.services.interfaces.CuentaCorrienteService;
+import hennovo_backend.pagos.repositorys.PagoRepository;
 import hennovo_backend.pedidos.entitys.DetallePedido;
 import hennovo_backend.pedidos.entitys.Pedido;
 import hennovo_backend.pedidos.repositorys.DetallePedidoRepository;
 import hennovo_backend.pedidos.repositorys.PedidoRepository;
+import hennovo_backend.pedidoshabituales.entitys.PedidoHabitual;
 import hennovo_backend.pedidoshabituales.repository.PedidoHabitualRepository;
 import hennovo_backend.planillaventas.dtos.request.PlanillaVentasOrdenItemRequest;
 import hennovo_backend.planillaventas.dtos.request.PlanillaVentasOrdenRequest;
@@ -41,7 +42,7 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
     private final PedidoRepository pedidoRepository;
     private final DetallePedidoRepository detallePedidoRepository;
     private final PedidoHabitualRepository pedidoHabitualRepository;
-    private final CuentaCorrienteService cuentaCorrienteService;
+    private final PagoRepository pagoRepository;
     private final PlanillaVentasOrdenRepository planillaVentasOrdenRepository;
     private final UsuarioRepository usuarioRepository;
 
@@ -56,22 +57,58 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
                 .filter(Cliente::getActivo)
                 .toList();
 
+        List<Long> clienteIds = clientes.stream()
+                .map(Cliente::getId)
+                .toList();
+
+        Map<Long, List<PedidoHabitual>> habitualesPorCliente = pedidoHabitualRepository.findByClienteIdIn(clienteIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        h -> h.getCliente().getId()));
+
+        Map<Long, BigDecimal> totalPedidosPorCliente = new HashMap<>();
+
+        for (Object[] fila : pedidoRepository.calcularTotalesPorCliente(clienteIds)) {
+            Long clienteId = (Long) fila[0];
+            BigDecimal total = (BigDecimal) fila[1];
+
+            totalPedidosPorCliente.put(clienteId, total);
+        }
+
+        Map<Long, BigDecimal> totalPagosPorCliente = new HashMap<>();
+
+        for (Object[] fila : pagoRepository.calcularTotalesPorCliente(clienteIds)) {
+            Long clienteId = (Long) fila[0];
+            BigDecimal total = (BigDecimal) fila[1];
+
+            totalPagosPorCliente.put(clienteId, total);
+        }
+
         // Solo los pedidos de ESTE usuario (dueño de la planilla) para esta fecha
         List<Pedido> pedidosDelDia = pedidoRepository.findByFechaAndUsuarioId(fecha, usuarioId);
 
         Map<Long, Pedido> pedidoPorCliente = pedidosDelDia.stream()
-                .collect(Collectors.toMap(p -> p.getCliente().getId(), p -> p));
+                .collect(Collectors.toMap(
+                        p -> p.getCliente().getId(),
+                        p -> p));
 
-        List<Long> pedidoIds = pedidosDelDia.stream().map(Pedido::getId).toList();
+        List<Long> pedidoIds = pedidosDelDia.stream()
+                .map(Pedido::getId)
+                .toList();
 
         Map<Long, List<DetallePedido>> detallesPorPedido = pedidoIds.isEmpty()
                 ? Map.of()
-                : detallePedidoRepository.findByPedidoIdIn(pedidoIds).stream()
-                        .collect(Collectors.groupingBy(d -> d.getPedido().getId()));
+                : detallePedidoRepository.findByPedidoIdIn(pedidoIds)
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                d -> d.getPedido().getId()));
 
         Map<Long, Integer> ordenPorCliente = planillaVentasOrdenRepository
-                .findByUsuarioIdAndFecha(usuarioId, fecha).stream()
-                .collect(Collectors.toMap(o -> o.getCliente().getId(), PlanillaVentasOrden::getOrden));
+                .findByUsuarioIdAndFecha(usuarioId, fecha)
+                .stream()
+                .collect(Collectors.toMap(
+                        o -> o.getCliente().getId(),
+                        PlanillaVentasOrden::getOrden));
 
         List<PlanillaVentasClienteDTO> resultado = new ArrayList<>();
 
@@ -79,8 +116,8 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
 
             Pedido pedido = pedidoPorCliente.get(cliente.getId());
 
-            List<TopeProductoDTO> topes = pedidoHabitualRepository
-                    .findByClienteId(cliente.getId())
+            List<TopeProductoDTO> topes = habitualesPorCliente
+                    .getOrDefault(cliente.getId(), List.of())
                     .stream()
                     .map(h -> new TopeProductoDTO(
                             h.getProducto().getId(),
@@ -88,12 +125,31 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
                             h.getCantidad()))
                     .toList();
 
-            CuentaCorrienteResponseDTO cuenta = cuentaCorrienteService
-                    .obtenerPorCliente(cliente.getId());
+            BigDecimal totalPedidos = totalPedidosPorCliente.getOrDefault(
+                    cliente.getId(),
+                    BigDecimal.ZERO);
+
+            BigDecimal totalPagos = totalPagosPorCliente.getOrDefault(
+                    cliente.getId(),
+                    BigDecimal.ZERO);
+
+            BigDecimal saldoPendiente = totalPedidos.subtract(totalPagos);
+
+            if (saldoPendiente.compareTo(BigDecimal.ZERO) < 0) {
+                saldoPendiente = BigDecimal.ZERO;
+            }
+
+            BigDecimal saldoAFavor = totalPagos.subtract(totalPedidos);
+
+            if (saldoAFavor.compareTo(BigDecimal.ZERO) < 0) {
+                saldoAFavor = BigDecimal.ZERO;
+            }
 
             List<DetallePedido> detalles = pedido == null
                     ? List.of()
-                    : detallesPorPedido.getOrDefault(pedido.getId(), List.of());
+                    : detallesPorPedido.getOrDefault(
+                            pedido.getId(),
+                            List.of());
 
             CantidadesTamanoDTO cantidades = calcularCantidades(detalles);
 
@@ -106,19 +162,26 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
                     pedido != null ? pedido.getPagado() : null,
                     pedido != null ? pedido.getBanco() : null,
                     pedido != null ? calcularTotal(detalles) : null,
-                    cuenta.saldo(),
-                    cuenta.saldoAFavor(),
-                    ordenPorCliente.getOrDefault(cliente.getId(), Integer.MAX_VALUE),
+                    saldoPendiente,
+                    saldoAFavor,
+                    ordenPorCliente.getOrDefault(
+                            cliente.getId(),
+                            Integer.MAX_VALUE),
                     topes,
-                    cantidades
-            ));
+                    cantidades));
         }
 
-        // Ordenamos: primero por orden guardado, y a igualdad (sin orden asignado), alfabético
+        // Ordenamos: primero por orden guardado, y a igualdad (sin orden asignado),
+        // alfabético
         resultado.sort((a, b) -> {
             int cmp = Integer.compare(a.orden(), b.orden());
-            if (cmp != 0) return cmp;
-            return a.clienteNombre().compareToIgnoreCase(b.clienteNombre());
+
+            if (cmp != 0) {
+                return cmp;
+            }
+
+            return a.clienteNombre()
+                    .compareToIgnoreCase(b.clienteNombre());
         });
 
         return resultado;
@@ -139,7 +202,9 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
 
             PlanillaVentasOrden orden = planillaVentasOrdenRepository
                     .findByUsuarioIdAndClienteIdAndFecha(
-                            request.usuarioId(), item.clienteId(), request.fecha())
+                            request.usuarioId(),
+                            item.clienteId(),
+                            request.fecha())
                     .orElseGet(() -> {
                         PlanillaVentasOrden nuevo = new PlanillaVentasOrden();
                         nuevo.setUsuario(usuario);
@@ -156,38 +221,76 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
 
     private CantidadesTamanoDTO calcularCantidades(List<DetallePedido> detalles) {
 
-        int t1Color = 0, t1Blanco = 0, t2Color = 0, t2Blanco = 0, t3Color = 0, t3Blanco = 0, otros = 0;
+        int t1Color = 0;
+        int t1Blanco = 0;
+        int t2Color = 0;
+        int t2Blanco = 0;
+        int t3Color = 0;
+        int t3Blanco = 0;
+        int otros = 0;
 
         for (DetallePedido detalle : detalles) {
 
             Producto producto = detalle.getProducto();
             int cantidad = detalle.getCantidad();
-            boolean esColor = producto.getTipoHuevo().name().equals("COLOR");
+
+            boolean esColor = producto.getTipoHuevo()
+                    .name()
+                    .equals("COLOR");
 
             switch (producto.getTamaño()) {
+
                 case GRANDE -> {
-                    if (esColor) t1Color += cantidad; else t1Blanco += cantidad;
+                    if (esColor) {
+                        t1Color += cantidad;
+                    } else {
+                        t1Blanco += cantidad;
+                    }
                 }
+
                 case MEDIANO -> {
-                    if (esColor) t2Color += cantidad; else t2Blanco += cantidad;
+                    if (esColor) {
+                        t2Color += cantidad;
+                    } else {
+                        t2Blanco += cantidad;
+                    }
                 }
+
                 case CHICO -> {
-                    if (esColor) t3Color += cantidad; else t3Blanco += cantidad;
+                    if (esColor) {
+                        t3Color += cantidad;
+                    } else {
+                        t3Blanco += cantidad;
+                    }
                 }
+
                 default -> otros += cantidad;
             }
         }
 
-        return new CantidadesTamanoDTO(t1Color, t1Blanco, t2Color, t2Blanco, t3Color, t3Blanco, otros);
+        return new CantidadesTamanoDTO(
+                t1Color,
+                t1Blanco,
+                t2Color,
+                t2Blanco,
+                t3Color,
+                t3Blanco,
+                otros);
     }
 
     private BigDecimal calcularTotal(List<DetallePedido> detalles) {
+
         return detalles.stream()
-                .map(d -> d.getPrecioUnitario().multiply(BigDecimal.valueOf(d.getCantidad())))
+                .map(d -> d.getPrecioUnitario()
+                        .multiply(BigDecimal.valueOf(d.getCantidad())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private String nombreProducto(Producto producto) {
-        return producto.getPresentacion() + " " + producto.getTipoHuevo() + " " + producto.getTamaño();
+        return producto.getPresentacion()
+                + " "
+                + producto.getTipoHuevo()
+                + " "
+                + producto.getTamaño();
     }
 }

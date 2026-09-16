@@ -5,12 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface PedidoHabitualRepository extends JpaRepository<PedidoHabitual, Long> {
+public interface PedidoHabitualRepository
+        extends JpaRepository<PedidoHabitual, Long> {
 
     List<PedidoHabitual> findByClienteId(Long clienteId);
 
+    List<PedidoHabitual> findByClienteIdIn(List<Long> clienteIds);
+
     boolean existsByClienteIdAndProductoId(
             Long clienteId,
-            Long productoId
-    );
+            Long productoId);
 }
