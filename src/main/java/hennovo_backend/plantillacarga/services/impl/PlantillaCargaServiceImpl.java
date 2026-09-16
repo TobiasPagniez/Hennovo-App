@@ -60,14 +60,16 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
 
         Vehiculo vehiculo = obtenerVehiculo(vehiculoId);
 
-        upsertPlantilla(vehiculo, NivelCarga.INFERIOR, "Base", request.filas(), request.columnas());
+        upsertPlantilla(
+                vehiculo, NivelCarga.INFERIOR, "Base",
+                request.filas(), request.columnas(), request.confirmarPerdidaDatos());
 
         if (Boolean.TRUE.equals(request.incluirNivelSuperior())) {
-            upsertPlantilla(vehiculo, NivelCarga.SUPERIOR, "Superior", request.filas(), request.columnas());
+            upsertPlantilla(
+                    vehiculo, NivelCarga.SUPERIOR, "Superior",
+                    request.filas(), request.columnas(), request.confirmarPerdidaDatos());
         }
 
-        // Al reconfigurar, no hay contenido para ninguna fecha todavía, así que
-        // devolver la vista de "hoy" es equivalente a cualquier otra fecha.
         return obtenerPorVehiculo(vehiculoId, LocalDate.now());
     }
 
@@ -76,7 +78,8 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
             NivelCarga nivel,
             String nombrePorDefecto,
             Integer filas,
-            Integer columnas) {
+            Integer columnas,
+            boolean confirmarPerdidaDatos) {
 
         Optional<PlantillaCarga> existente = plantillaCargaRepository
                 .findByVehiculoIdAndNivel(vehiculo.getId(), nivel);
@@ -100,15 +103,13 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
 
         boolean cambioDeTamano = !filas.equals(plantilla.getFilas()) || !columnas.equals(plantilla.getColumnas());
 
-        if (cambioDeTamano) {
-            // Esto borra el contenido de TODAS las fechas cargadas para este
-            // vehículo y nivel, no solo la fecha que se esté viendo.
-            plantilla.getCeldas().clear();
-            plantilla.setFilas(filas);
-            plantilla.setColumnas(columnas);
-            generarCeldas(plantilla, filas, columnas);
-            plantillaCargaRepository.save(plantilla);
+        if (!cambioDeTamano) {
+            return;
         }
+
+        redimensionarPlantilla(plantilla, filas, columnas, confirmarPerdidaDatos);
+
+        plantillaCargaRepository.save(plantilla);
     }
 
     private void generarCeldas(PlantillaCarga plantilla, Integer filas, Integer columnas) {
@@ -122,6 +123,57 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
                 celda.setPlantilla(plantilla);
 
                 plantilla.getCeldas().add(celda);
+            }
+        }
+    }
+
+    private void redimensionarPlantilla(
+            PlantillaCarga plantilla,
+            Integer filasNuevas,
+            Integer columnasNuevas,
+            boolean confirmarPerdidaDatos) {
+
+        List<CeldaPlantilla> celdasFueraDeRango = plantilla.getCeldas().stream()
+                .filter(c -> c.getFila() > filasNuevas || c.getColumna() > columnasNuevas)
+                .toList();
+
+        List<LocalDate> fechasAfectadas = celdasFueraDeRango.stream()
+                .flatMap(c -> c.getDetalles().stream())
+                .map(DetalleCelda::getFecha)
+                .distinct()
+                .sorted()
+                .toList();
+
+        if (!fechasAfectadas.isEmpty() && !confirmarPerdidaDatos) {
+            throw new BadRequestException(
+                    "Achicar la grilla de " + plantilla.getFilas() + "x" + plantilla.getColumnas()
+                            + " a " + filasNuevas + "x" + columnasNuevas
+                            + " borraría el contenido cargado en " + fechasAfectadas.size()
+                            + " fecha(s). Confirmá explícitamente para continuar.",
+                    fechasAfectadas.stream().map(LocalDate::toString).toList());
+        }
+
+        plantilla.getCeldas().removeIf(
+                c -> c.getFila() > filasNuevas || c.getColumna() > columnasNuevas);
+
+        plantilla.setFilas(filasNuevas);
+        plantilla.setColumnas(columnasNuevas);
+
+        for (int fila = 1; fila <= filasNuevas; fila++) {
+            for (int columna = 1; columna <= columnasNuevas; columna++) {
+
+                final int filaActual = fila;
+                final int columnaActual = columna;
+                boolean existe = plantilla.getCeldas().stream()
+                        .anyMatch(c -> c.getFila() == filaActual && c.getColumna() == columnaActual);
+
+                if (!existe) {
+                    CeldaPlantilla celda = new CeldaPlantilla();
+                    celda.setFila(filaActual);
+                    celda.setColumna(columna);
+                    celda.setPlantilla(plantilla);
+                    plantilla.getCeldas().add(celda);
+                }
             }
         }
     }

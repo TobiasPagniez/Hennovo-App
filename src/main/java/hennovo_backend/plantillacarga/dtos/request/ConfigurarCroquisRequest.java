@@ -14,6 +14,12 @@ public record ConfigurarCroquisRequest(
         Integer columnas,
 
         @NotNull(message = "Debe indicar si se usa nivel superior")
-        Boolean incluirNivelSuperior
+        Boolean incluirNivelSuperior,
 
-) {}
+        Boolean confirmarPerdidaDatos
+
+) {
+    public Boolean confirmarPerdidaDatos() {
+        return Boolean.TRUE.equals(confirmarPerdidaDatos);
+    }
+}
