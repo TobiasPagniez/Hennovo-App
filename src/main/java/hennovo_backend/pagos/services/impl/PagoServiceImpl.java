@@ -75,6 +75,10 @@ public class PagoServiceImpl implements PagoService {
             chequeRepository.save(cheque);
         }
 
+        // Sincroniza Pedido.pagado: este pago puede cubrir total o
+        // parcialmente pedidos pendientes del cliente
+        cuentaCorrienteService.sincronizarEstadoPedidos(cliente.getId());
+
         return pagoMapper.toResponseDTO(pagoGuardado);
     }
 
