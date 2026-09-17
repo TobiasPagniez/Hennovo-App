@@ -22,8 +22,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+            FilterChain filterChain) throws ServletException, IOException {
 
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
@@ -39,25 +38,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
             response.setHeader("Retry-After", String.valueOf(decision.retryAfterSeconds()));
             response.setContentType("application/json");
             response.getWriter().write("""
-                {
-                  "status": 429,
-                  "error": "Too Many Requests",
-                  "message": "Demasiadas solicitudes. Intente nuevamente más tarde."
-                }
-                """);
+                    {
+                      "status": 429,
+                      "error": "Too Many Requests",
+                      "message": "Demasiadas solicitudes. Intente nuevamente más tarde."
+                    }
+                    """);
             return;
         }
 
         filterChain.doFilter(request, response);
     }
-    private String getClientIp(HttpServletRequest request) {
-
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
-
-        return request.getRemoteAddr();
+    
+    private String getClientIp(HttpServletRequest request){ // el Proxi deve ser quien determine la ip real y limpie 
+        return request.getRemoteAddr();                     // x fowarded for y la aplcaicon debe estar configurada a esa infraestructura
     }
 }
