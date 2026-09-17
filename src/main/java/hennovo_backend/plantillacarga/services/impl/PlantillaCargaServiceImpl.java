@@ -60,17 +60,66 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
 
         Vehiculo vehiculo = obtenerVehiculo(vehiculoId);
 
-        upsertPlantilla(
-                vehiculo, NivelCarga.INFERIOR, "Base",
-                request.filas(), request.columnas(), request.confirmarPerdidaDatos());
+        boolean incluirSuperior = Boolean.TRUE.equals(request.incluirNivelSuperior());
 
-        if (Boolean.TRUE.equals(request.incluirNivelSuperior())) {
-            upsertPlantilla(
-                    vehiculo, NivelCarga.SUPERIOR, "Superior",
-                    request.filas(), request.columnas(), request.confirmarPerdidaDatos());
+        List<LocalDate> fechasAfectadas = new ArrayList<>(
+                fechasAfectadasPorRedimension(vehiculo, NivelCarga.INFERIOR, request.filas(), request.columnas()));
+
+        if (incluirSuperior) {
+            fechasAfectadas.addAll(
+                    fechasAfectadasPorRedimension(vehiculo, NivelCarga.SUPERIOR, request.filas(), request.columnas()));
+        }
+
+        List<LocalDate> fechasAfectadasUnicas = fechasAfectadas.stream()
+                .distinct()
+                .sorted()
+                .toList();
+
+        if (!fechasAfectadasUnicas.isEmpty() && !request.confirmarPerdidaDatos()) {
+            throw new BadRequestException(
+                    "Achicar la grilla a " + request.filas() + "x" + request.columnas()
+                            + " borraría el contenido cargado en " + fechasAfectadasUnicas.size()
+                            + " fecha(s). Confirmá explícitamente para continuar.",
+                    fechasAfectadasUnicas.stream().map(LocalDate::toString).toList());
+        }
+
+        upsertPlantilla(vehiculo, NivelCarga.INFERIOR, "Base", request.filas(), request.columnas());
+
+        if (incluirSuperior) {
+            upsertPlantilla(vehiculo, NivelCarga.SUPERIOR, "Superior", request.filas(), request.columnas());
         }
 
         return obtenerPorVehiculo(vehiculoId, LocalDate.now());
+    }
+
+    // Fechas con contenido que se perderian al redimensionar este nivel; vacia si no existe o no cambia de tamaño
+    private List<LocalDate> fechasAfectadasPorRedimension(
+            Vehiculo vehiculo,
+            NivelCarga nivel,
+            Integer filasNuevas,
+            Integer columnasNuevas) {
+
+        Optional<PlantillaCarga> existente = plantillaCargaRepository
+                .findByVehiculoIdAndNivel(vehiculo.getId(), nivel);
+
+        if (existente.isEmpty()) {
+            return List.of();
+        }
+
+        PlantillaCarga plantilla = existente.get();
+
+        boolean cambioDeTamano = !filasNuevas.equals(plantilla.getFilas()) || !columnasNuevas.equals(plantilla.getColumnas());
+
+        if (!cambioDeTamano) {
+            return List.of();
+        }
+
+        return plantilla.getCeldas().stream()
+                .filter(c -> c.getFila() > filasNuevas || c.getColumna() > columnasNuevas)
+                .flatMap(c -> c.getDetalles().stream())
+                .map(DetalleCelda::getFecha)
+                .distinct()
+                .toList();
     }
 
     private void upsertPlantilla(
@@ -78,8 +127,7 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
             NivelCarga nivel,
             String nombrePorDefecto,
             Integer filas,
-            Integer columnas,
-            boolean confirmarPerdidaDatos) {
+            Integer columnas) {
 
         Optional<PlantillaCarga> existente = plantillaCargaRepository
                 .findByVehiculoIdAndNivel(vehiculo.getId(), nivel);
@@ -107,7 +155,7 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
             return;
         }
 
-        redimensionarPlantilla(plantilla, filas, columnas, confirmarPerdidaDatos);
+        redimensionarPlantilla(plantilla, filas, columnas);
 
         plantillaCargaRepository.save(plantilla);
     }
@@ -130,28 +178,7 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
     private void redimensionarPlantilla(
             PlantillaCarga plantilla,
             Integer filasNuevas,
-            Integer columnasNuevas,
-            boolean confirmarPerdidaDatos) {
-
-        List<CeldaPlantilla> celdasFueraDeRango = plantilla.getCeldas().stream()
-                .filter(c -> c.getFila() > filasNuevas || c.getColumna() > columnasNuevas)
-                .toList();
-
-        List<LocalDate> fechasAfectadas = celdasFueraDeRango.stream()
-                .flatMap(c -> c.getDetalles().stream())
-                .map(DetalleCelda::getFecha)
-                .distinct()
-                .sorted()
-                .toList();
-
-        if (!fechasAfectadas.isEmpty() && !confirmarPerdidaDatos) {
-            throw new BadRequestException(
-                    "Achicar la grilla de " + plantilla.getFilas() + "x" + plantilla.getColumnas()
-                            + " a " + filasNuevas + "x" + columnasNuevas
-                            + " borraría el contenido cargado en " + fechasAfectadas.size()
-                            + " fecha(s). Confirmá explícitamente para continuar.",
-                    fechasAfectadas.stream().map(LocalDate::toString).toList());
-        }
+            Integer columnasNuevas) {
 
         plantilla.getCeldas().removeIf(
                 c -> c.getFila() > filasNuevas || c.getColumna() > columnasNuevas);
