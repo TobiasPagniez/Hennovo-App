@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import hennovo_backend.cheques.entitys.Cheque;
-import hennovo_backend.cheques.mapper.ChequeMapper;
 import hennovo_backend.cheques.repositorys.ChequeRepository;
 import hennovo_backend.clientes.entitys.Cliente;
 import hennovo_backend.clientes.repositorys.ClienteRepository;
@@ -32,7 +31,6 @@ public class PagoServiceImpl implements PagoService {
     private final ClienteRepository clienteRepository;
     private final PagoMapper pagoMapper;
     private final ChequeRepository chequeRepository;
-    private final ChequeMapper chequeMapper;
     private final CuentaCorrienteService cuentaCorrienteService;
 
     @Override
@@ -74,6 +72,10 @@ public class PagoServiceImpl implements PagoService {
 
             chequeRepository.save(cheque);
         }
+
+        // Sincroniza Pedido.pagado: este pago puede cubrir total o
+        // parcialmente pedidos pendientes del cliente
+        cuentaCorrienteService.sincronizarEstadoPedidos(cliente.getId());
 
         return pagoMapper.toResponseDTO(pagoGuardado);
     }

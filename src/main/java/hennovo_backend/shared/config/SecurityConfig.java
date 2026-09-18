@@ -20,7 +20,6 @@ import org.springframework.http.HttpMethod;
 
 import hennovo_backend.shared.logging.LogHubLoggingFilter;
 import hennovo_backend.shared.security.JwtAuthenticationFilter;
-import hennovo_backend.shared.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -29,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final RateLimitFilter rateLimitFilter;
     private final LogHubLoggingFilter logHubLoggingFilter;
 
     @Bean
