@@ -638,6 +638,7 @@ public class RemitoPdfServiceImpl implements RemitoPdfService {
             case MAPLE -> "";
             case CAJON -> "Cajón";
             case CAJITA -> "Cajita";
+            case CAJON_DE_CAJITAS -> "Cajón de cajitas";
         };
 
         if (presentacion.isBlank()) {
