@@ -104,10 +104,12 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
                             producto.getId(),
                             categoria.getId(),
                             listaPrecio.getId())
-                    .orElseThrow(() -> new NotFoundException(
-                            "No existe un precio para el producto y categoría indicados"));
+                    .orElseGet(PrecioProducto::new);
 
             precioProducto.setPrecio(precioRequest.precio());
+            precioProducto.setProducto(producto);
+            precioProducto.setCategoria(categoria);
+            precioProducto.setLista(listaPrecio);
 
             precioProductoRepository.save(precioProducto);
         }
