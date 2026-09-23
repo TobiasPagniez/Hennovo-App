@@ -54,9 +54,23 @@ public class PlantillaCargaServiceImpl implements PlantillaCargaService {
                 .toList();
     }
 
+    private static final int FILAS_MINIMAS = 2;
+    private static final int FILAS_MAXIMAS = 20;
+    private static final int COLUMNAS_MINIMAS = 2;
+    private static final int COLUMNAS_MAXIMAS = 20;
+
     @Override
     @Transactional
     public List<PlantillaCargaResponse> configurar(Long vehiculoId, ConfigurarCroquisRequest request) {
+
+        if (request.filas() < FILAS_MINIMAS || request.filas() > FILAS_MAXIMAS) {
+            throw new BadRequestException(
+                    "La cantidad de filas debe estar entre " + FILAS_MINIMAS + " y " + FILAS_MAXIMAS);
+        }
+        if (request.columnas() < COLUMNAS_MINIMAS || request.columnas() > COLUMNAS_MAXIMAS) {
+            throw new BadRequestException(
+                    "La cantidad de columnas debe estar entre " + COLUMNAS_MINIMAS + " y " + COLUMNAS_MAXIMAS);
+        }
 
         Vehiculo vehiculo = obtenerVehiculo(vehiculoId);
 
