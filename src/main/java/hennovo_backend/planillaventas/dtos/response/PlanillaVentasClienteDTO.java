@@ -8,6 +8,8 @@ public record PlanillaVentasClienteDTO(
         String clienteNombre,
         String direccion,
         Long pedidoId,
+        // Todos los pedidos del cliente en el día (normalmente uno solo)
+        List<Long> pedidoIds,
         Boolean entregado,
         Boolean pagado,
         String banco,

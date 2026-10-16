@@ -3,6 +3,7 @@ package hennovo_backend.planillaventas.services.impl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,10 +88,11 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
         // Solo los pedidos de ESTE usuario (dueño de la planilla) para esta fecha
         List<Pedido> pedidosDelDia = pedidoRepository.findByFechaAndUsuarioId(fecha, usuarioId);
 
-        Map<Long, Pedido> pedidoPorCliente = pedidosDelDia.stream()
-                .collect(Collectors.toMap(
-                        p -> p.getCliente().getId(),
-                        p -> p));
+        // Un cliente puede tener más de un pedido en el día: se agrupan y la
+        // fila de la planilla los muestra combinados
+        Map<Long, List<Pedido>> pedidosPorCliente = pedidosDelDia.stream()
+                .collect(Collectors.groupingBy(
+                        p -> p.getCliente().getId()));
 
         List<Long> pedidoIds = pedidosDelDia.stream()
                 .map(Pedido::getId)
@@ -114,7 +116,12 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
 
         for (Cliente cliente : clientes) {
 
-            Pedido pedido = pedidoPorCliente.get(cliente.getId());
+            List<Pedido> pedidos = pedidosPorCliente
+                    .getOrDefault(cliente.getId(), List.of())
+                    .stream()
+                    .sorted(Comparator.comparing(Pedido::getId))
+                    .toList();
+            boolean tienePedido = !pedidos.isEmpty();
 
             List<TopeProductoDTO> topes = habitualesPorCliente
                     .getOrDefault(cliente.getId(), List.of())
@@ -145,23 +152,34 @@ public class PlanillaVentasServiceImpl implements PlanillaVentasService {
                 saldoAFavor = BigDecimal.ZERO;
             }
 
-            List<DetallePedido> detalles = pedido == null
-                    ? List.of()
-                    : detallesPorPedido.getOrDefault(
-                            pedido.getId(),
-                            List.of());
+            List<DetallePedido> detalles = pedidos.stream()
+                    .flatMap(p -> detallesPorPedido
+                            .getOrDefault(p.getId(), List.of())
+                            .stream())
+                    .toList();
 
             CantidadesTamanoDTO cantidades = calcularCantidades(detalles);
+
+            List<Long> idsDelCliente = pedidos.stream()
+                    .map(Pedido::getId)
+                    .toList();
+
+            String banco = pedidos.stream()
+                    .map(Pedido::getBanco)
+                    .filter(b -> b != null && !b.isBlank())
+                    .distinct()
+                    .collect(Collectors.joining(" / "));
 
             resultado.add(new PlanillaVentasClienteDTO(
                     cliente.getId(),
                     cliente.getNombre(),
                     cliente.getDireccion(),
-                    pedido != null ? pedido.getId() : null,
-                    pedido != null ? pedido.getEntregado() : null,
-                    pedido != null ? pedido.getPagado() : null,
-                    pedido != null ? pedido.getBanco() : null,
-                    pedido != null ? calcularTotal(detalles) : null,
+                    tienePedido ? idsDelCliente.get(0) : null,
+                    idsDelCliente,
+                    tienePedido ? pedidos.stream().allMatch(Pedido::getEntregado) : null,
+                    tienePedido ? pedidos.stream().allMatch(Pedido::getPagado) : null,
+                    tienePedido && !banco.isEmpty() ? banco : null,
+                    tienePedido ? calcularTotal(detalles) : null,
                     saldoPendiente,
                     saldoAFavor,
                     ordenPorCliente.getOrDefault(

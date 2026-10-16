@@ -7,6 +7,7 @@ import hennovo_backend.pagos.entitys.MedioPago;
 import hennovo_backend.shared.validation.NoHtml;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 
 public record PagoRequestDTO(
@@ -43,7 +44,11 @@ public record PagoRequestDTO(
 
         Boolean endosado,
 
-        Boolean firmaTitular
+        Boolean firmaTitular,
+
+        // Fecha en que se recibió el pago; si no se envía se usa la fecha actual
+        @PastOrPresent(message = "La fecha del pago no puede ser futura")
+        LocalDate fecha
 
 ) {
 }

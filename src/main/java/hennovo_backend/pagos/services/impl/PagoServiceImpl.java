@@ -48,7 +48,10 @@ public class PagoServiceImpl implements PagoService {
         Pago pago = pagoMapper.toEntity(dto);
 
         pago.setCliente(cliente);
-        pago.setFecha(LocalDate.now());
+        // Fecha en que se recibió el pago (no confundir con dto.fechaPago(),
+        // que es la fecha de cobro del cheque)
+        LocalDate fechaRecepcion = dto.fecha() != null ? dto.fecha() : LocalDate.now();
+        pago.setFecha(fechaRecepcion);
         pago.setAnulado(false);
 
         Pago pagoGuardado = pagoRepository.save(pago);
@@ -59,7 +62,7 @@ public class PagoServiceImpl implements PagoService {
             //esto va en el mapper
             Cheque cheque = new Cheque();
 
-            cheque.setFechaIngreso(LocalDate.now());
+            cheque.setFechaIngreso(fechaRecepcion);
             cheque.setCliente(cliente);
             cheque.setTitular(dto.titular());
             cheque.setCodigoBanco(dto.codigoBanco());
