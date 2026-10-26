@@ -106,6 +106,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/asignar")
                         .hasRole("ADMIN")
 
+                        .requestMatchers(HttpMethod.POST, "/api/listas-precio/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/listas-precio/**")
+                        .hasRole("ADMIN")
+
                         .anyRequest()
                         .authenticated())
 

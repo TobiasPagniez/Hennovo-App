@@ -55,6 +55,8 @@ Reglas de acceso definidas globalmente:
 | `/api/control-horario/resumen` | Solo `ADMIN` |
 | `/api/control-horario/usuario/**` | Solo `ADMIN` |
 | `PATCH /api/pedidos/{id}/asignar` | Solo `ADMIN` |
+| `POST /api/listas-precio/**` | Solo `ADMIN` |
+| `PUT /api/listas-precio/**` | Solo `ADMIN` |
 | Cualquier otra ruta | Requiere estar autenticado (cualquier rol) |
 
 > Nota: los controladores no declaran anotaciones `@PreAuthorize` propias — las restricciones de rol viven centralizadas en `SecurityConfig`. Si un endpoint no aparece en la tabla, solo exige estar autenticado.

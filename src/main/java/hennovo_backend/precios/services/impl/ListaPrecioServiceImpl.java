@@ -114,6 +114,15 @@ public class ListaPrecioServiceImpl implements ListaPrecioService {
             precioProductoRepository.save(precioProducto);
         }
 
+        // Los precios que no vienen en el request se quitaron de la lista
+        List<PrecioProducto> preciosQuitados = precioProductoRepository
+                .findByListaId(listaPrecio.getId()).stream()
+                .filter(precio -> !preciosActualizados.contains(
+                        precio.getProducto().getId() + ":" + precio.getCategoria().getId()))
+                .toList();
+
+        precioProductoRepository.deleteAll(preciosQuitados);
+
         return obtenerPorId(listaPrecio.getId());
     }
 
